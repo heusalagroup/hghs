@@ -1,0 +1,48 @@
+{
+  "name": "hghs",
+  "version": "1.0.0",
+  "description": "HG HomeServer",
+  "main": "dist/hghs.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start-prod": "node dist/hghs.js",
+    "start": "ts-node src/hghs.ts",
+    "build": "rollup -c"
+  },
+  "author": "Jaakko Heusala <jhh@hg.fi>",
+  "license": "MIT",
+  "private": true,
+  "bin": {
+    "hghs": "dist/hghs.js"
+  },
+  "keywords": [
+    "typescript",
+    "backend",
+    "rest",
+    "nodejs",
+    "spring",
+    "spring-boot"
+  ],
+  "dependencies": {
+    "@babel/cli": "^7.17.6",
+    "@babel/core": "^7.17.9",
+    "@babel/preset-env": "^7.16.11",
+    "@babel/preset-typescript": "^7.16.7",
+    "@rollup/plugin-babel": "^5.3.1",
+    "@rollup/plugin-commonjs": "^21.1.0",
+    "@rollup/plugin-inject": "^4.0.4",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^13.2.1",
+    "@rollup/plugin-replace": "^4.0.0",
+    "@rollup/plugin-typescript": "^8.3.2",
+    "@types/lodash": "^4.14.182",
+    "@types/node": "^17.0.25",
+    "lodash": "^4.17.21",
+    "rollup": "^2.70.2",
+    "rollup-plugin-uglify": "^6.0.4",
+    "ts-node": "^10.7.0",
+    "tslib": "^2.4.0",
+    "typescript": "^4.6.3"
+  },
+  "devDependencies": {}
+}
