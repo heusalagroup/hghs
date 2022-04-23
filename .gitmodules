@@ -2,3 +2,9 @@
 	path = /Users/jhh/git/heusalagroup/hghs/src/fi/hg/core
 	url = git@github.com:heusalagroup/fi.hg.core.git
 	branch = main
+[submodule "src/fi/hg/core"]
+	url = git@github.com:heusalagroup/fi.hg.core.git
+	path = src/fi/hg/core
+[submodule "src/fi/hg/matrix"]
+	path = src/fi/hg/matrix
+	url = git@github.com:heusalagroup/fi.hg.matrix.git
