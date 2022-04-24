@@ -1,6 +1,6 @@
 # @heusalagroup/hghs
 
-*HG HomeServer* will be a zero dep Matrix.org HomeServer written in pure TypeScript.
+*HG HomeServer* will be a zero dep [Matrix.org](https://matrix.org) HomeServer written in pure TypeScript.
 
 It can be compiled as a single JS file. The only runtime dependency is NodeJS.
 
