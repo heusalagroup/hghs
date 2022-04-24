@@ -30,6 +30,8 @@ import { createMatrixIdentityServerInformationDTO, MatrixIdentityServerInformati
 import { createGetDirectoryRoomAliasResponseDTO, GetDirectoryRoomAliasResponseDTO } from "../fi/hg/matrix/types/response/directoryRoomAlias/GetDirectoryRoomAliasResponseDTO";
 import { createMatrixRoomJoinedMembersDTO, MatrixRoomJoinedMembersDTO } from "../fi/hg/matrix/types/response/roomJoinedMembers/MatrixRoomJoinedMembersDTO";
 import { createMatrixRoomJoinedMembersRoomMemberDTO } from "../fi/hg/matrix/types/response/roomJoinedMembers/types/MatrixRoomJoinedMembersRoomMemberDTO";
+import { isMatrixMatrixRegisterRequestDTO } from "../fi/hg/matrix/types/request/register/MatrixRegisterRequestDTO";
+import { createMatrixRegisterResponseDTO } from "../fi/hg/matrix/types/response/register/MatrixRegisterResponseDTO";
 
 const LOG = LogService.createLogger('HgHsBackendController');
 
@@ -295,6 +297,7 @@ export class HgHsBackendController {
      *
      * @param token
      * @param kindString
+     * @param body
      * @see https://github.com/heusalagroup/hghs/issues/6
      */
     @PostMapping("/_matrix/client/r0/register")
@@ -305,17 +308,32 @@ export class HgHsBackendController {
         })
             token: string,
         @RequestParam('kind', RequestParamValueType.STRING)
-            kindString = ""
+            kindString = "",
+        @RequestBody
+            body: ReadonlyJsonObject
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
             const kind : string | undefined = parseMatrixRegisterKind(kindString);
             LOG.debug(`kind = `, kind);
 
+            if (!isMatrixMatrixRegisterRequestDTO(body)) {
+                // @FIXME: Fix to use correct error DTO from Matrix Spec
+                return ResponseEntity.badRequest<ErrorDTO>().body(
+                    createErrorDTO(`Body not MatrixMatrixRegisterRequestDTO`, 400)
+                ).status(400);
+            }
+
+            // @FIXME: Implement https://github.com/heusalagroup/hghs/issues/6
+            const responseDto = createMatrixRegisterResponseDTO(
+                'user_id',
+                'access_token',
+                'home_server',
+                'device_id'
+            );
+
             return ResponseEntity.ok(
-                {
-                    hello: 'world'
-                } as unknown as ReadonlyJsonObject
+                responseDto as unknown as ReadonlyJsonObject
             );
 
         } catch (err) {
