@@ -21,12 +21,11 @@ import { createSynapsePreRegisterResponseDTO } from "../fi/hg/matrix/types/synap
 import { isSynapseRegisterRequestDTO } from "../fi/hg/matrix/types/synapse/SynapseRegisterRequestDTO";
 import { createSynapseRegisterResponseDTO, SynapseRegisterResponseDTO } from "../fi/hg/matrix/types/synapse/SynapseRegisterResponseDTO";
 import { createMatrixWhoAmIResponseDTO } from "../fi/hg/matrix/types/response/whoami/MatrixWhoAmIResponseDTO";
-import { isMatrixLoginRequestDTO, MatrixLoginRequestDTO, parseMatrixLoginRequestDTO } from "../fi/hg/matrix/types/request/login/MatrixLoginRequestDTO";
-import { createMatrixPasswordLoginRequestDTO } from "../fi/hg/matrix/types/request/passwordLogin/MatrixPasswordLoginRequestDTO";
+import { isMatrixLoginRequestDTO } from "../fi/hg/matrix/types/request/login/MatrixLoginRequestDTO";
 import { createMatrixLoginResponseDTO, MatrixLoginResponseDTO } from "../fi/hg/matrix/types/response/login/MatrixLoginResponseDTO";
-import { createMatrixDiscoveryInformationDTO, MatrixDiscoveryInformationDTO } from "../fi/hg/matrix/types/response/login/types/MatrixDiscoveryInformationDTO";
-import { createMatrixHomeServerDTO, MatrixHomeServerDTO } from "../fi/hg/matrix/types/response/login/types/MatrixHomeServerDTO";
-import { createMatrixIdentityServerInformationDTO, MatrixIdentityServerInformationDTO } from "../fi/hg/matrix/types/response/login/types/MatrixIdentityServerInformationDTO";
+import { createMatrixDiscoveryInformationDTO } from "../fi/hg/matrix/types/response/login/types/MatrixDiscoveryInformationDTO";
+import { createMatrixHomeServerDTO } from "../fi/hg/matrix/types/response/login/types/MatrixHomeServerDTO";
+import { createMatrixIdentityServerInformationDTO } from "../fi/hg/matrix/types/response/login/types/MatrixIdentityServerInformationDTO";
 import { createGetDirectoryRoomAliasResponseDTO, GetDirectoryRoomAliasResponseDTO } from "../fi/hg/matrix/types/response/directoryRoomAlias/GetDirectoryRoomAliasResponseDTO";
 import { createMatrixRoomJoinedMembersDTO, MatrixRoomJoinedMembersDTO } from "../fi/hg/matrix/types/response/roomJoinedMembers/MatrixRoomJoinedMembersDTO";
 import { createMatrixRoomJoinedMembersRoomMemberDTO } from "../fi/hg/matrix/types/response/roomJoinedMembers/types/MatrixRoomJoinedMembersRoomMemberDTO";
@@ -42,7 +41,9 @@ import { createMatrixInviteToRoomResponseDTO } from "../fi/hg/matrix/types/respo
 import { isMatrixTextMessageDTO } from "../fi/hg/matrix/types/message/textMessage/MatrixTextMessageDTO";
 import { createSendEventToRoomWithTnxIdResponseDTO } from "../fi/hg/matrix/types/response/sendEventToRoomWithTnxId/SendEventToRoomWithTnxIdResponseDTO";
 import { isMatrixCreateRoomDTO } from "../fi/hg/matrix/types/request/createRoom/MatrixCreateRoomDTO";
-import { createMatrixCreateRoomResponseDTO, isMatrixCreateRoomResponseDTO, MatrixCreateRoomResponseDTO } from "../fi/hg/matrix/types/response/createRoom/MatrixCreateRoomResponseDTO";
+import { createMatrixCreateRoomResponseDTO } from "../fi/hg/matrix/types/response/createRoom/MatrixCreateRoomResponseDTO";
+import { isMatrixJoinRoomRequestDTO } from "../fi/hg/matrix/types/request/joinRoom/MatrixJoinRoomRequestDTO";
+import { createMatrixJoinRoomResponseDTO } from "../fi/hg/matrix/types/response/joinRoom/MatrixJoinRoomResponseDTO";
 
 const LOG = LogService.createLogger('HgHsBackendController');
 
@@ -678,6 +679,7 @@ export class HgHsBackendController {
      *
      * @param token
      * @param roomId
+     * @param body
      * @see https://github.com/heusalagroup/hghs/issues/14
      */
     @PostMapping("/_matrix/client/r0/rooms/:roomId/join")
@@ -688,16 +690,26 @@ export class HgHsBackendController {
         })
             token: string,
         @PathVariable('roomId', {required: true})
-            roomId = ""
+            roomId = "",
+        @RequestBody
+            body: ReadonlyJsonObject
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
-            LOG.debug(`joinToRoom`);
+            if (!isMatrixJoinRoomRequestDTO(body)) {
+                // @FIXME: Fix to use correct error DTO from Matrix Spec
+                return ResponseEntity.badRequest<ErrorDTO>().body(
+                    createErrorDTO(`Body not MatrixJoinRoomRequestDTO`, 400)
+                ).status(400);
+            }
+
+            LOG.debug(`joinToRoom: `, body);
+
+            // FIXME: Implement https://github.com/heusalagroup/hghs/issues/14
+            const responseDto = createMatrixJoinRoomResponseDTO('room_id');
 
             return ResponseEntity.ok(
-                {
-                    hello: 'world'
-                } as unknown as ReadonlyJsonObject
+                responseDto as unknown as ReadonlyJsonObject
             );
 
         } catch (err) {
