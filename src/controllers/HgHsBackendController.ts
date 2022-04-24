@@ -21,7 +21,7 @@ import { createSynapsePreRegisterResponseDTO } from "../fi/hg/matrix/types/synap
 import { isSynapseRegisterRequestDTO } from "../fi/hg/matrix/types/synapse/SynapseRegisterRequestDTO";
 import { createSynapseRegisterResponseDTO, SynapseRegisterResponseDTO } from "../fi/hg/matrix/types/synapse/SynapseRegisterResponseDTO";
 import { createMatrixWhoAmIResponseDTO } from "../fi/hg/matrix/types/response/whoami/MatrixWhoAmIResponseDTO";
-import { MatrixLoginRequestDTO, parseMatrixLoginRequestDTO } from "../fi/hg/matrix/types/request/login/MatrixLoginRequestDTO";
+import { isMatrixLoginRequestDTO, MatrixLoginRequestDTO, parseMatrixLoginRequestDTO } from "../fi/hg/matrix/types/request/login/MatrixLoginRequestDTO";
 import { createMatrixPasswordLoginRequestDTO } from "../fi/hg/matrix/types/request/passwordLogin/MatrixPasswordLoginRequestDTO";
 import { createMatrixLoginResponseDTO, MatrixLoginResponseDTO } from "../fi/hg/matrix/types/response/login/MatrixLoginResponseDTO";
 import { createMatrixDiscoveryInformationDTO, MatrixDiscoveryInformationDTO } from "../fi/hg/matrix/types/response/login/types/MatrixDiscoveryInformationDTO";
@@ -181,7 +181,12 @@ export class HgHsBackendController {
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
-            const bodyDto : MatrixLoginRequestDTO = parseMatrixLoginRequestDTO(body);
+            if (!isMatrixLoginRequestDTO(body)) {
+                // @FIXME: Fix to use correct error DTO from Matrix Spec
+                return ResponseEntity.badRequest<ErrorDTO>().body(
+                    createErrorDTO(`Body not AuthenticateEmailDTO`, 400)
+                ).status(400);
+            }
 
             // @FIXME: Implement https://github.com/heusalagroup/hghs/issues/3
             const responseDto : MatrixLoginResponseDTO = createMatrixLoginResponseDTO(
