@@ -1,8 +1,10 @@
 # @heusalagroup/hghs
 
-*HG HomeServer* will be a zero dep [Matrix.org](https://matrix.org) HomeServer written in pure TypeScript.
+*HG HomeServer* will be a zero dep [Matrix.org](https://matrix.org) HomeServer 
+written in pure TypeScript.
 
-It can be compiled as a single JS file. The only runtime dependency is NodeJS.
+It compiles as a single standalone JavaScript file. The only runtime dependency 
+is NodeJS. We plan to support embedded devices (e.g. OpenWRT), for example.
 
 However, it will only support(*) [a subset of Matrix.org protocol](https://github.com/heusalagroup/hghs/issues/16) that our software is using.
 
