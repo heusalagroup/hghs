@@ -460,4 +460,40 @@ export class HgHsBackendController {
         }
     }
 
+    @GetMapping("/_matrix/client/r0/sync")
+    public static async sync (
+        @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
+            required: false,
+            defaultValue: ''
+        })
+            token: string,
+        @PathVariable('filter', {required: true})
+            filter = "",
+        @PathVariable('since', {required: true})
+            since = "",
+        @PathVariable('full_state', {required: true})
+            full_state = "",
+        @PathVariable('set_presence', {required: true})
+            set_presence = "",
+        @PathVariable('timeout', {required: true})
+            timeout = ""
+    ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
+        try {
+
+            LOG.debug(`sync: `, filter, since, full_state, set_presence, timeout);
+
+            return ResponseEntity.ok(
+                {
+                    hello: 'world'
+                } as unknown as ReadonlyJsonObject
+            );
+
+        } catch (err) {
+            LOG.error(`ERROR: `, err);
+            return ResponseEntity.internalServerError<{readonly error: string}>().body(
+                createErrorDTO('Internal Server Error', 500)
+            );
+        }
+    }
+
 }
