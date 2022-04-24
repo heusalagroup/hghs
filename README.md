@@ -6,9 +6,9 @@ written in pure TypeScript.
 It compiles as a single standalone JavaScript file. The only runtime dependency 
 is NodeJS. We plan to support embedded devices (e.g. OpenWRT), for example.
 
-However, it will only support(*) [a subset of Matrix.org protocol](https://github.com/heusalagroup/hghs/issues/16) that our software is using.
+However, it will only(*) support [a subset of Matrix.org protocol](https://github.com/heusalagroup/hghs/issues/16) that our software is using.
 
-*) Except if somebody sponsors our development financially.
+*) Unless somebody sponsors financially our development.
 
 ### Start the server in development mode
 
