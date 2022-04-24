@@ -20,6 +20,7 @@ import { parseMatrixRegisterKind } from "../fi/hg/matrix/types/request/register/
 import { createSynapsePreRegisterResponseDTO } from "../fi/hg/matrix/types/synapse/SynapsePreRegisterResponseDTO";
 import { isSynapseRegisterRequestDTO } from "../fi/hg/matrix/types/synapse/SynapseRegisterRequestDTO";
 import { createSynapseRegisterResponseDTO, SynapseRegisterResponseDTO } from "../fi/hg/matrix/types/synapse/SynapseRegisterResponseDTO";
+import { createMatrixWhoAmIResponseDTO } from "../fi/hg/matrix/types/response/whoami/MatrixWhoAmIResponseDTO";
 
 const LOG = LogService.createLogger('HgHsBackendController');
 
@@ -138,11 +139,14 @@ export class HgHsBackendController {
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
-            return ResponseEntity.ok(
-                {
-                    hello: 'world'
-                } as unknown as ReadonlyJsonObject
+            // @FIXME: Implement https://github.com/heusalagroup/hghs/issues/2
+            const response = createMatrixWhoAmIResponseDTO(
+                'user_id',
+                'device_id',
+                false
             );
+
+            return ResponseEntity.ok( response as unknown as ReadonlyJsonObject );
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
