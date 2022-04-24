@@ -28,6 +28,8 @@ import { createMatrixDiscoveryInformationDTO, MatrixDiscoveryInformationDTO } fr
 import { createMatrixHomeServerDTO, MatrixHomeServerDTO } from "../fi/hg/matrix/types/response/login/types/MatrixHomeServerDTO";
 import { createMatrixIdentityServerInformationDTO, MatrixIdentityServerInformationDTO } from "../fi/hg/matrix/types/response/login/types/MatrixIdentityServerInformationDTO";
 import { createGetDirectoryRoomAliasResponseDTO, GetDirectoryRoomAliasResponseDTO } from "../fi/hg/matrix/types/response/directoryRoomAlias/GetDirectoryRoomAliasResponseDTO";
+import { createMatrixRoomJoinedMembersDTO, MatrixRoomJoinedMembersDTO } from "../fi/hg/matrix/types/response/roomJoinedMembers/MatrixRoomJoinedMembersDTO";
+import { createMatrixRoomJoinedMembersRoomMemberDTO } from "../fi/hg/matrix/types/response/roomJoinedMembers/types/MatrixRoomJoinedMembersRoomMemberDTO";
 
 const LOG = LogService.createLogger('HgHsBackendController');
 
@@ -270,10 +272,14 @@ export class HgHsBackendController {
 
             LOG.debug(`roomId = `, roomId);
 
-            return ResponseEntity.ok(
+            const responseDto : MatrixRoomJoinedMembersDTO = createMatrixRoomJoinedMembersDTO(
                 {
-                    hello: 'world'
-                } as unknown as ReadonlyJsonObject
+                    "user": createMatrixRoomJoinedMembersRoomMemberDTO("display_name", "avatar_url")
+                }
+            );
+
+            return ResponseEntity.ok(
+                responseDto as unknown as ReadonlyJsonObject
             );
 
         } catch (err) {
