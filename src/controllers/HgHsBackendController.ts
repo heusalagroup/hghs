@@ -1,7 +1,7 @@
 // Copyright (c) 2022. Heusala Group <info@heusalagroup.fi>. All rights reserved.
 
 import {
-    GetMapping, PostMapping,
+    GetMapping, PathVariable, PostMapping,
     RequestHeader,
     RequestMapping
 } from "../fi/hg/core/Request";
@@ -119,6 +119,32 @@ export class HgHsBackendController {
             defaultValue: ''
         })
             token: string
+    ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
+        try {
+
+            return ResponseEntity.ok(
+                {
+                    hello: 'world'
+                } as unknown as ReadonlyJsonObject
+            );
+
+        } catch (err) {
+            LOG.error(`ERROR: `, err);
+            return ResponseEntity.internalServerError<{readonly error: string}>().body(
+                createErrorDTO('Internal Server Error', 500)
+            );
+        }
+    }
+
+    @GetMapping("/_matrix/client/r0/directory/room/:roomAlias")
+    public static async getDirectoryRoomByName (
+        @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
+            required: false,
+            defaultValue: ''
+        })
+            token: string,
+        @PathVariable('roomAlias', {required: true})
+            roomAlias = ""
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
