@@ -21,6 +21,12 @@ import { createSynapsePreRegisterResponseDTO } from "../fi/hg/matrix/types/synap
 import { isSynapseRegisterRequestDTO } from "../fi/hg/matrix/types/synapse/SynapseRegisterRequestDTO";
 import { createSynapseRegisterResponseDTO, SynapseRegisterResponseDTO } from "../fi/hg/matrix/types/synapse/SynapseRegisterResponseDTO";
 import { createMatrixWhoAmIResponseDTO } from "../fi/hg/matrix/types/response/whoami/MatrixWhoAmIResponseDTO";
+import { MatrixLoginRequestDTO, parseMatrixLoginRequestDTO } from "../fi/hg/matrix/types/request/login/MatrixLoginRequestDTO";
+import { createMatrixPasswordLoginRequestDTO } from "../fi/hg/matrix/types/request/passwordLogin/MatrixPasswordLoginRequestDTO";
+import { createMatrixLoginResponseDTO, MatrixLoginResponseDTO } from "../fi/hg/matrix/types/response/login/MatrixLoginResponseDTO";
+import { createMatrixDiscoveryInformationDTO, MatrixDiscoveryInformationDTO } from "../fi/hg/matrix/types/response/login/types/MatrixDiscoveryInformationDTO";
+import { createMatrixHomeServerDTO, MatrixHomeServerDTO } from "../fi/hg/matrix/types/response/login/types/MatrixHomeServerDTO";
+import { createMatrixIdentityServerInformationDTO, MatrixIdentityServerInformationDTO } from "../fi/hg/matrix/types/response/login/types/MatrixIdentityServerInformationDTO";
 
 const LOG = LogService.createLogger('HgHsBackendController');
 
@@ -94,7 +100,7 @@ export class HgHsBackendController {
         })
             token: string,
         @RequestBody
-            body: ReadonlyJsonObject,
+            body: ReadonlyJsonObject
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
@@ -160,6 +166,7 @@ export class HgHsBackendController {
     /**
      *
      * @param token
+     * @param body
      * @see https://github.com/heusalagroup/hghs/issues/3
      */
     @PostMapping("/_matrix/client/r0/login")
@@ -168,15 +175,27 @@ export class HgHsBackendController {
             required: false,
             defaultValue: ''
         })
-            token: string
+            token: string,
+        @RequestBody
+            body: ReadonlyJsonObject
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
-            return ResponseEntity.ok(
-                {
-                    hello: 'world'
-                } as unknown as ReadonlyJsonObject
+            const bodyDto : MatrixLoginRequestDTO = parseMatrixLoginRequestDTO(body);
+
+            // @FIXME: Implement https://github.com/heusalagroup/hghs/issues/3
+            const responseDto : MatrixLoginResponseDTO = createMatrixLoginResponseDTO(
+                'user_id',
+                'access_token',
+                'home_server',
+                'device_id',
+                createMatrixDiscoveryInformationDTO(
+                    createMatrixHomeServerDTO('base_url'),
+                    createMatrixIdentityServerInformationDTO('base_url')
+                )
             );
+
+            return ResponseEntity.ok( responseDto as unknown as ReadonlyJsonObject );
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
