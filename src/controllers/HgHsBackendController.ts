@@ -9,6 +9,7 @@ import { ReadonlyJsonObject } from "../fi/hg/core/Json";
 import { ResponseEntity } from "../fi/hg/core/request/ResponseEntity";
 import { LogService } from "../fi/hg/core/LogService";
 import { MATRIX_AUTHORIZATION_HEADER_NAME } from "../fi/hg/matrix/constants/matrix-routes";
+import { createErrorDTO } from "../fi/hg/core/types/ErrorDTO";
 
 const LOG = LogService.createLogger('HgHsBackendController');
 
@@ -21,19 +22,21 @@ export class HgHsBackendController {
             required: false,
             defaultValue: ''
         })
-        token: string
+            token: string
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
-            return ResponseEntity.ok({
-                hello: 'world'
-            } as unknown as ReadonlyJsonObject);
+            return ResponseEntity.ok(
+                {
+                    hello: 'world'
+                } as unknown as ReadonlyJsonObject
+            );
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
-            return ResponseEntity.internalServerError<{readonly error: string}>().body({
-                error: 'Internal Server Error'
-            });
+            return ResponseEntity.internalServerError<{readonly error: string}>().body(
+                createErrorDTO('Internal Server Error', 500)
+            );
         }
     }
 
@@ -43,19 +46,21 @@ export class HgHsBackendController {
             required: false,
             defaultValue: ''
         })
-        token: string
+            token: string
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
-            return ResponseEntity.ok({
-                hello: 'world'
-            } as unknown as ReadonlyJsonObject);
+            return ResponseEntity.ok(
+                {
+                    hello: 'world'
+                } as unknown as ReadonlyJsonObject
+            );
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
-            return ResponseEntity.internalServerError<{readonly error: string}>().body({
-                error: 'Internal Server Error'
-            });
+            return ResponseEntity.internalServerError<{readonly error: string}>().body(
+                createErrorDTO('Internal Server Error', 500)
+            );
         }
     }
 
@@ -65,19 +70,45 @@ export class HgHsBackendController {
             required: false,
             defaultValue: ''
         })
-        token: string
+            token: string
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
-            return ResponseEntity.ok({
-                hello: 'world'
-            } as unknown as ReadonlyJsonObject);
+            return ResponseEntity.ok(
+                {
+                    hello: 'world'
+                } as unknown as ReadonlyJsonObject
+            );
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
-            return ResponseEntity.internalServerError<{readonly error: string}>().body({
-                error: 'Internal Server Error'
-            });
+            return ResponseEntity.internalServerError<{readonly error: string}>().body(
+                createErrorDTO('Internal Server Error', 500)
+            );
+        }
+    }
+
+    @GetMapping("/_matrix/client/r0/account/whoami")
+    public static async getWhoAmI (
+        @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
+            required: false,
+            defaultValue: ''
+        })
+            token: string
+    ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
+        try {
+
+            return ResponseEntity.ok(
+                {
+                    hello: 'world'
+                } as unknown as ReadonlyJsonObject
+            );
+
+        } catch (err) {
+            LOG.error(`ERROR: `, err);
+            return ResponseEntity.internalServerError<{readonly error: string}>().body(
+                createErrorDTO('Internal Server Error', 500)
+            );
         }
     }
 
