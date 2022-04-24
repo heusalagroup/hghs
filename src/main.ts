@@ -25,6 +25,9 @@ import { HgHsBackendController } from "./controllers/HgHsBackendController";
 import { RequestRouter } from "./fi/hg/core/requestServer/RequestRouter";
 import { Headers } from "./fi/hg/core/request/Headers";
 import { BUILD_USAGE_URL, BUILD_WITH_FULL_USAGE } from "./constants/build";
+import { MatrixServerService } from "./fi/hg/matrix/server/MatrixServerService";
+import { MemoryMatrixRepositoryService } from "./fi/hg/matrix/server/repository/memory/MemoryMatrixRepositoryService";
+import { MatrixRepositoryService } from "./fi/hg/matrix/server/types/MatrixRepositoryService";
 
 const LOG = LogService.createLogger('main');
 
@@ -52,6 +55,10 @@ export async function main (
             console.error(`ERROR: ${errorString}`);
             return exitStatus;
         }
+
+        const matrixRepository : MatrixRepositoryService = new MemoryMatrixRepositoryService();
+        const matrixServer : MatrixServerService = new MatrixServerService(matrixRepository);
+        HgHsBackendController.setMatrixServer( matrixServer );
 
         const server = new RequestServer(BACKEND_URL);
         server.attachController(HgHsBackendController);

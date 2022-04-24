@@ -45,11 +45,18 @@ import { createMatrixCreateRoomResponseDTO } from "../fi/hg/matrix/types/respons
 import { isMatrixJoinRoomRequestDTO } from "../fi/hg/matrix/types/request/joinRoom/MatrixJoinRoomRequestDTO";
 import { createMatrixJoinRoomResponseDTO } from "../fi/hg/matrix/types/response/joinRoom/MatrixJoinRoomResponseDTO";
 import { createMatrixSyncResponseDTO, MatrixSyncResponseDTO } from "../fi/hg/matrix/types/response/sync/MatrixSyncResponseDTO";
+import { MatrixServerService } from "../fi/hg/matrix/server/MatrixServerService";
 
 const LOG = LogService.createLogger('HgHsBackendController');
 
 @RequestMapping("/")
 export class HgHsBackendController {
+
+    private static _matrixServer : MatrixServerService | undefined;
+
+    public static setMatrixServer (value: MatrixServerService) {
+        this._matrixServer = value;
+    }
 
     @GetMapping("/")
     public static async getIndex (
@@ -90,8 +97,9 @@ export class HgHsBackendController {
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
-            // @TODO: Implement https://github.com/heusalagroup/hghs/issues/1
-            const response = createSynapsePreRegisterResponseDTO('TODO');
+            const nonce = await this._matrixServer.createAdminRegisterNonce();
+
+            const response = createSynapsePreRegisterResponseDTO( nonce );
 
             return ResponseEntity.ok( response as unknown as ReadonlyJsonObject );
 
