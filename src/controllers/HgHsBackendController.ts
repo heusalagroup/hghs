@@ -148,6 +148,36 @@ export class HgHsBackendController {
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
+            LOG.debug(`roomAlias = `, roomAlias);
+
+            return ResponseEntity.ok(
+                {
+                    hello: 'world'
+                } as unknown as ReadonlyJsonObject
+            );
+
+        } catch (err) {
+            LOG.error(`ERROR: `, err);
+            return ResponseEntity.internalServerError<{readonly error: string}>().body(
+                createErrorDTO('Internal Server Error', 500)
+            );
+        }
+    }
+
+    @GetMapping("/_matrix/client/r0/rooms/:roomId/joined_members")
+    public static async getRoomJoinedMembers (
+        @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
+            required: false,
+            defaultValue: ''
+        })
+            token: string,
+        @PathVariable('roomId', {required: true})
+            roomId = ""
+    ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
+        try {
+
+            LOG.debug(`roomId = `, roomId);
+
             return ResponseEntity.ok(
                 {
                     hello: 'world'
