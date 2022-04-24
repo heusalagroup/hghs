@@ -45,6 +45,10 @@ export class HgHsBackendController {
         }
     }
 
+    /**
+     * @param token
+     * @see https://github.com/heusalagroup/hghs/issues/1
+     */
     @GetMapping("/_synapse/admin/v1/register")
     public static async getSynapseAdminRegister (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
