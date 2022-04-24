@@ -27,6 +27,7 @@ import { createMatrixLoginResponseDTO, MatrixLoginResponseDTO } from "../fi/hg/m
 import { createMatrixDiscoveryInformationDTO, MatrixDiscoveryInformationDTO } from "../fi/hg/matrix/types/response/login/types/MatrixDiscoveryInformationDTO";
 import { createMatrixHomeServerDTO, MatrixHomeServerDTO } from "../fi/hg/matrix/types/response/login/types/MatrixHomeServerDTO";
 import { createMatrixIdentityServerInformationDTO, MatrixIdentityServerInformationDTO } from "../fi/hg/matrix/types/response/login/types/MatrixIdentityServerInformationDTO";
+import { createGetDirectoryRoomAliasResponseDTO, GetDirectoryRoomAliasResponseDTO } from "../fi/hg/matrix/types/response/directoryRoomAlias/GetDirectoryRoomAliasResponseDTO";
 
 const LOG = LogService.createLogger('HgHsBackendController');
 
@@ -231,10 +232,13 @@ export class HgHsBackendController {
 
             LOG.debug(`roomAlias = `, roomAlias);
 
+            const response : GetDirectoryRoomAliasResponseDTO = createGetDirectoryRoomAliasResponseDTO(
+                'room_id',
+                ['server1']
+            );
+
             return ResponseEntity.ok(
-                {
-                    hello: 'world'
-                } as unknown as ReadonlyJsonObject
+                response as unknown as ReadonlyJsonObject
             );
 
         } catch (err) {
