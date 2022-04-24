@@ -463,10 +463,9 @@ export class HgHsBackendController {
 
             LOG.debug(`set: roomId = `, roomId);
 
+            // @FIXME: Implement https://github.com/heusalagroup/hghs/issues/9
             return ResponseEntity.ok(
-                {
-                    hello: 'world'
-                } as unknown as ReadonlyJsonObject
+                {} as unknown as ReadonlyJsonObject
             );
 
         } catch (err) {
