@@ -41,6 +41,8 @@ import { isMatrixInviteToRoomRequestDTO } from "../fi/hg/matrix/types/request/in
 import { createMatrixInviteToRoomResponseDTO } from "../fi/hg/matrix/types/response/inviteToRoom/MatrixInviteToRoomResponseDTO";
 import { isMatrixTextMessageDTO } from "../fi/hg/matrix/types/message/textMessage/MatrixTextMessageDTO";
 import { createSendEventToRoomWithTnxIdResponseDTO } from "../fi/hg/matrix/types/response/sendEventToRoomWithTnxId/SendEventToRoomWithTnxIdResponseDTO";
+import { isMatrixCreateRoomDTO } from "../fi/hg/matrix/types/request/createRoom/MatrixCreateRoomDTO";
+import { createMatrixCreateRoomResponseDTO, isMatrixCreateRoomResponseDTO, MatrixCreateRoomResponseDTO } from "../fi/hg/matrix/types/response/createRoom/MatrixCreateRoomResponseDTO";
 
 const LOG = LogService.createLogger('HgHsBackendController');
 
@@ -629,6 +631,7 @@ export class HgHsBackendController {
     /**
      *
      * @param token
+     * @param body
      * @see https://github.com/heusalagroup/hghs/issues/13
      */
     @PostMapping("/_matrix/client/r0/createRoom")
@@ -637,16 +640,29 @@ export class HgHsBackendController {
             required: false,
             defaultValue: ''
         })
-            token: string
+            token: string,
+        @RequestBody
+            body: ReadonlyJsonObject
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
-            LOG.debug(`createRoom`);
+            if (!isMatrixCreateRoomDTO(body)) {
+                // @FIXME: Fix to use correct error DTO from Matrix Spec
+                return ResponseEntity.badRequest<ErrorDTO>().body(
+                    createErrorDTO(`Body not MatrixCreateRoomDTO`, 400)
+                ).status(400);
+            }
+
+            LOG.debug(`createRoom:`, body);
+
+            // FIXME: Implement https://github.com/heusalagroup/hghs/issues/13
+            const responseDto = createMatrixCreateRoomResponseDTO(
+                'room_id',
+                undefined
+            );
 
             return ResponseEntity.ok(
-                {
-                    hello: 'world'
-                } as unknown as ReadonlyJsonObject
+                responseDto as unknown as ReadonlyJsonObject
             );
 
         } catch (err) {
