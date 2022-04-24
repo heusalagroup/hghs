@@ -3,7 +3,9 @@
 import {
     GetMapping,
     PathVariable,
-    PostMapping, PutMapping,
+    PostMapping,
+    PutMapping,
+    RequestBody,
     RequestHeader,
     RequestMapping,
     RequestParam
@@ -12,9 +14,12 @@ import { ReadonlyJsonObject } from "../fi/hg/core/Json";
 import { ResponseEntity } from "../fi/hg/core/request/ResponseEntity";
 import { LogService } from "../fi/hg/core/LogService";
 import { MATRIX_AUTHORIZATION_HEADER_NAME } from "../fi/hg/matrix/constants/matrix-routes";
-import { createErrorDTO } from "../fi/hg/core/types/ErrorDTO";
+import { createErrorDTO, ErrorDTO } from "../fi/hg/core/types/ErrorDTO";
 import { RequestParamValueType } from "../fi/hg/core/request/types/RequestParamValueType";
 import { parseMatrixRegisterKind } from "../fi/hg/matrix/types/request/register/types/MatrixRegisterKind";
+import { createSynapsePreRegisterResponseDTO } from "../fi/hg/matrix/types/synapse/SynapsePreRegisterResponseDTO";
+import { isSynapseRegisterRequestDTO } from "../fi/hg/matrix/types/synapse/SynapseRegisterRequestDTO";
+import { createSynapseRegisterResponseDTO, SynapseRegisterResponseDTO } from "../fi/hg/matrix/types/synapse/SynapseRegisterResponseDTO";
 
 const LOG = LogService.createLogger('HgHsBackendController');
 
@@ -39,6 +44,7 @@ export class HgHsBackendController {
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
+            // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
                 createErrorDTO('Internal Server Error', 500)
             );
@@ -59,14 +65,14 @@ export class HgHsBackendController {
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
-            return ResponseEntity.ok(
-                {
-                    hello: 'world'
-                } as unknown as ReadonlyJsonObject
-            );
+            // @TODO: Implement https://github.com/heusalagroup/hghs/issues/1
+            const response = createSynapsePreRegisterResponseDTO('TODO');
+
+            return ResponseEntity.ok( response as unknown as ReadonlyJsonObject );
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
+            // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
                 createErrorDTO('Internal Server Error', 500)
             );
@@ -76,6 +82,7 @@ export class HgHsBackendController {
     /**
      *
      * @param token
+     * @param body
      * @see https://github.com/heusalagroup/hghs/issues/1
      */
     @PostMapping("/_synapse/admin/v1/register")
@@ -84,18 +91,32 @@ export class HgHsBackendController {
             required: false,
             defaultValue: ''
         })
-            token: string
+            token: string,
+        @RequestBody
+            body: ReadonlyJsonObject,
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
-            return ResponseEntity.ok(
-                {
-                    hello: 'world'
-                } as unknown as ReadonlyJsonObject
+            if ( !isSynapseRegisterRequestDTO(body) ) {
+                // @FIXME: Fix to use correct error DTO from Matrix Spec
+                return ResponseEntity.badRequest<ErrorDTO>().body(
+                    createErrorDTO(`Body not AuthenticateEmailDTO`, 400)
+                ).status(400);
+            }
+
+            // @FIXME: Implement the end point
+            const response : SynapseRegisterResponseDTO = createSynapseRegisterResponseDTO(
+                'access_token',
+                'user_id',
+                'home_server',
+                'device_id'
             );
+
+            return ResponseEntity.ok( response as unknown as ReadonlyJsonObject );
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
+            // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
                 createErrorDTO('Internal Server Error', 500)
             );
@@ -125,6 +146,7 @@ export class HgHsBackendController {
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
+            // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
                 createErrorDTO('Internal Server Error', 500)
             );
@@ -154,6 +176,7 @@ export class HgHsBackendController {
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
+            // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
                 createErrorDTO('Internal Server Error', 500)
             );
@@ -188,6 +211,7 @@ export class HgHsBackendController {
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
+            // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
                 createErrorDTO('Internal Server Error', 500)
             );
@@ -222,6 +246,7 @@ export class HgHsBackendController {
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
+            // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
                 createErrorDTO('Internal Server Error', 500)
             );
@@ -257,6 +282,7 @@ export class HgHsBackendController {
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
+            // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
                 createErrorDTO('Internal Server Error', 500)
             );
@@ -297,6 +323,7 @@ export class HgHsBackendController {
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
+            // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
                 createErrorDTO('Internal Server Error', 500)
             );
@@ -337,6 +364,7 @@ export class HgHsBackendController {
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
+            // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
                 createErrorDTO('Internal Server Error', 500)
             );
@@ -371,6 +399,7 @@ export class HgHsBackendController {
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
+            // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
                 createErrorDTO('Internal Server Error', 500)
             );
@@ -405,6 +434,7 @@ export class HgHsBackendController {
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
+            // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
                 createErrorDTO('Internal Server Error', 500)
             );
@@ -439,6 +469,7 @@ export class HgHsBackendController {
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
+            // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
                 createErrorDTO('Internal Server Error', 500)
             );
@@ -479,6 +510,7 @@ export class HgHsBackendController {
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
+            // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
                 createErrorDTO('Internal Server Error', 500)
             );
@@ -510,6 +542,7 @@ export class HgHsBackendController {
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
+            // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
                 createErrorDTO('Internal Server Error', 500)
             );
@@ -544,6 +577,7 @@ export class HgHsBackendController {
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
+            // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
                 createErrorDTO('Internal Server Error', 500)
             );
@@ -590,6 +624,7 @@ export class HgHsBackendController {
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
+            // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
                 createErrorDTO('Internal Server Error', 500)
             );
