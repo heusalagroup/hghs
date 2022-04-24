@@ -89,7 +89,31 @@ export class HgHsBackendController {
     }
 
     @GetMapping("/_matrix/client/r0/account/whoami")
-    public static async getWhoAmI (
+    public static async accountWhoAmI (
+        @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
+            required: false,
+            defaultValue: ''
+        })
+            token: string
+    ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
+        try {
+
+            return ResponseEntity.ok(
+                {
+                    hello: 'world'
+                } as unknown as ReadonlyJsonObject
+            );
+
+        } catch (err) {
+            LOG.error(`ERROR: `, err);
+            return ResponseEntity.internalServerError<{readonly error: string}>().body(
+                createErrorDTO('Internal Server Error', 500)
+            );
+        }
+    }
+
+    @PostMapping("/_matrix/client/r0/login")
+    public static async login (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
             required: false,
             defaultValue: ''
