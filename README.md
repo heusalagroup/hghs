@@ -2,7 +2,9 @@
 
 *HG HomeServer* will be a zero dep Matrix.org HomeServer written in pure TypeScript.
 
-It will only support(*) [a small set of Matrix.org protocol](https://github.com/heusalagroup/hghs/issues/16) that our software products use.
+It can be compiled as a single JS file.
+
+However, it will only have support(*) for [a small set of Matrix.org protocol](https://github.com/heusalagroup/hghs/issues/16) that our software is using.
 
 *) Except if somebody sponsors our development financially.
 
