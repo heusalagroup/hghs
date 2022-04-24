@@ -2,7 +2,7 @@
 
 HG HomeServer will some day be a subset of Matrix.org HomeServer written in pure TypeScript.
 
-It will support a small set of Matrix.org protocol that our software products use.
+It will support [a small set of Matrix.org protocol](https://github.com/heusalagroup/hghs/issues/16) that our software products use.
 
 ### Start the server in development mode
 
