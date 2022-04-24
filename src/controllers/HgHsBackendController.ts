@@ -33,6 +33,8 @@ import { createMatrixRoomJoinedMembersRoomMemberDTO } from "../fi/hg/matrix/type
 import { isMatrixMatrixRegisterRequestDTO } from "../fi/hg/matrix/types/request/register/MatrixRegisterRequestDTO";
 import { createMatrixRegisterResponseDTO } from "../fi/hg/matrix/types/response/register/MatrixRegisterResponseDTO";
 import { createGetRoomStateByTypeResponseDTO } from "../fi/hg/matrix/types/response/getRoomStateByType/GetRoomStateByTypeResponseDTO";
+import { isSetRoomStateByTypeRequestDTO } from "../fi/hg/matrix/types/request/setRoomStateByType/SetRoomStateByTypeRequestDTO";
+import { createPutRoomStateWithEventTypeResponseDTO, PutRoomStateWithEventTypeResponseDTO } from "../fi/hg/matrix/types/response/setRoomStateByType/PutRoomStateWithEventTypeResponseDTO";
 
 const LOG = LogService.createLogger('HgHsBackendController');
 
@@ -393,6 +395,7 @@ export class HgHsBackendController {
      * @param roomId
      * @param eventType
      * @param stateKey
+     * @param body
      * @see https://github.com/heusalagroup/hghs/issues/8
      */
     @PutMapping("/_matrix/client/r0/rooms/:roomId/state/:eventType/:stateKey")
@@ -407,16 +410,28 @@ export class HgHsBackendController {
         @PathVariable('eventType', {required: true})
         eventType = "",
         @PathVariable('stateKey', {required: true})
-        stateKey = ""
+        stateKey = "",
+        @RequestBody
+        body: ReadonlyJsonObject
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
             LOG.debug(`set: roomId = `, roomId, eventType, stateKey);
 
+            if (!isSetRoomStateByTypeRequestDTO(body)) {
+                // @FIXME: Fix to use correct error DTO from Matrix Spec
+                return ResponseEntity.badRequest<ErrorDTO>().body(
+                    createErrorDTO(`Body not SetRoomStateByTypeRequestDTO`, 400)
+                ).status(400);
+            }
+
+            // @todo: Implement https://github.com/heusalagroup/hghs/issues/8
+            const responseDto : PutRoomStateWithEventTypeResponseDTO = createPutRoomStateWithEventTypeResponseDTO(
+                eventType
+            );
+
             return ResponseEntity.ok(
-                {
-                    hello: 'world'
-                } as unknown as ReadonlyJsonObject
+                responseDto as unknown as ReadonlyJsonObject
             );
 
         } catch (err) {
