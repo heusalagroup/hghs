@@ -35,6 +35,10 @@ import { createMatrixRegisterResponseDTO } from "../fi/hg/matrix/types/response/
 import { createGetRoomStateByTypeResponseDTO } from "../fi/hg/matrix/types/response/getRoomStateByType/GetRoomStateByTypeResponseDTO";
 import { isSetRoomStateByTypeRequestDTO } from "../fi/hg/matrix/types/request/setRoomStateByType/SetRoomStateByTypeRequestDTO";
 import { createPutRoomStateWithEventTypeResponseDTO, PutRoomStateWithEventTypeResponseDTO } from "../fi/hg/matrix/types/response/setRoomStateByType/PutRoomStateWithEventTypeResponseDTO";
+import { isMatrixLeaveRoomRequestDTO } from "../fi/hg/matrix/types/request/leaveRoom/MatrixLeaveRoomRequestDTO";
+import { createMatrixLeaveRoomResponseDTO } from "../fi/hg/matrix/types/response/leaveRoom/MatrixLeaveRoomResponseDTO";
+import { isMatrixInviteToRoomRequestDTO } from "../fi/hg/matrix/types/request/inviteToRoom/MatrixInviteToRoomRequestDTO";
+import { createMatrixInviteToRoomResponseDTO } from "../fi/hg/matrix/types/response/inviteToRoom/MatrixInviteToRoomResponseDTO";
 
 const LOG = LogService.createLogger('HgHsBackendController');
 
@@ -481,6 +485,7 @@ export class HgHsBackendController {
      *
      * @param token
      * @param roomId
+     * @param body
      * @see https://github.com/heusalagroup/hghs/issues/10
      */
     @PostMapping("/_matrix/client/r0/rooms/:roomId/leave")
@@ -491,16 +496,25 @@ export class HgHsBackendController {
         })
         token: string,
         @PathVariable('roomId', {required: true})
-        roomId = ""
+        roomId = "",
+        @RequestBody
+        body: ReadonlyJsonObject
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
             LOG.debug(`leaveRoom: roomId = `, roomId);
 
+            if (!isMatrixLeaveRoomRequestDTO(body)) {
+                // @FIXME: Fix to use correct error DTO from Matrix Spec
+                return ResponseEntity.badRequest<ErrorDTO>().body(
+                    createErrorDTO(`Body not MatrixLeaveRoomRequestDTO`, 400)
+                ).status(400);
+            }
+
+            const responseDto = createMatrixLeaveRoomResponseDTO();
+
             return ResponseEntity.ok(
-                {
-                    hello: 'world'
-                } as unknown as ReadonlyJsonObject
+                responseDto as unknown as ReadonlyJsonObject
             );
 
         } catch (err) {
@@ -516,6 +530,7 @@ export class HgHsBackendController {
      *
      * @param token
      * @param roomId
+     * @param body
      * @see https://github.com/heusalagroup/hghs/issues/11
      */
     @PostMapping("/_matrix/client/r0/rooms/:roomId/invite")
@@ -526,16 +541,26 @@ export class HgHsBackendController {
         })
         token: string,
         @PathVariable('roomId', {required: true})
-        roomId = ""
+        roomId = "",
+        @RequestBody
+        body: ReadonlyJsonObject
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
             LOG.debug(`inviteToRoom: roomId = `, roomId);
 
+            if (!isMatrixInviteToRoomRequestDTO(body)) {
+                // @FIXME: Fix to use correct error DTO from Matrix Spec
+                return ResponseEntity.badRequest<ErrorDTO>().body(
+                    createErrorDTO(`Body not MatrixInviteToRoomRequestDTO`, 400)
+                ).status(400);
+            }
+
+            // FIXME: Implement https://github.com/heusalagroup/hghs/issues/11
+            const responseDto = createMatrixInviteToRoomResponseDTO();
+
             return ResponseEntity.ok(
-                {
-                    hello: 'world'
-                } as unknown as ReadonlyJsonObject
+                responseDto as unknown as ReadonlyJsonObject
             );
 
         } catch (err) {
