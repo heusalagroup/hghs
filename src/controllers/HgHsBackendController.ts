@@ -467,15 +467,15 @@ export class HgHsBackendController {
             defaultValue: ''
         })
             token: string,
-        @PathVariable('filter', {required: true})
+        @RequestParam('filter', RequestParamValueType.STRING)
             filter = "",
-        @PathVariable('since', {required: true})
+        @RequestParam('since', RequestParamValueType.STRING)
             since = "",
-        @PathVariable('full_state', {required: true})
+        @RequestParam('full_state', RequestParamValueType.STRING)
             full_state = "",
-        @PathVariable('set_presence', {required: true})
+        @RequestParam('set_presence', RequestParamValueType.STRING)
             set_presence = "",
-        @PathVariable('timeout', {required: true})
+        @RequestParam('timeout', RequestParamValueType.STRING)
             timeout = ""
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
