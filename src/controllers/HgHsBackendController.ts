@@ -3,7 +3,7 @@
 import {
     GetMapping,
     PathVariable,
-    PostMapping,
+    PostMapping, PutMapping,
     RequestHeader,
     RequestMapping,
     RequestParam
@@ -359,6 +359,38 @@ export class HgHsBackendController {
         try {
 
             LOG.debug(`inviteToRoom: roomId = `, roomId);
+
+            return ResponseEntity.ok(
+                {
+                    hello: 'world'
+                } as unknown as ReadonlyJsonObject
+            );
+
+        } catch (err) {
+            LOG.error(`ERROR: `, err);
+            return ResponseEntity.internalServerError<{readonly error: string}>().body(
+                createErrorDTO('Internal Server Error', 500)
+            );
+        }
+    }
+
+    @PutMapping("/_matrix/client/v3/rooms/:roomId/send/:eventName/:tnxId")
+    public static async sendEventToRoomWithTnxId (
+        @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
+            required: false,
+            defaultValue: ''
+        })
+        token: string,
+        @PathVariable('roomId', {required: true})
+        roomId = "",
+        @PathVariable('eventName', {required: true})
+        eventName = "",
+        @PathVariable('tnxId', {required: true})
+        tnxId = ""
+    ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
+        try {
+
+            LOG.debug(`inviteToRoom: roomId = `, roomId, eventName, tnxId);
 
             return ResponseEntity.ok(
                 {
