@@ -1,15 +1,20 @@
 // Copyright (c) 2022. Heusala Group <info@heusalagroup.fi>. All rights reserved.
 
 import {
-    GetMapping, PathVariable, PostMapping,
+    GetMapping,
+    PathVariable,
+    PostMapping,
     RequestHeader,
-    RequestMapping
+    RequestMapping,
+    RequestParam
 } from "../fi/hg/core/Request";
 import { ReadonlyJsonObject } from "../fi/hg/core/Json";
 import { ResponseEntity } from "../fi/hg/core/request/ResponseEntity";
 import { LogService } from "../fi/hg/core/LogService";
 import { MATRIX_AUTHORIZATION_HEADER_NAME } from "../fi/hg/matrix/constants/matrix-routes";
 import { createErrorDTO } from "../fi/hg/core/types/ErrorDTO";
+import { RequestParamValueType } from "../fi/hg/core/request/types/RequestParamValueType";
+import { parseMatrixRegisterKind } from "../fi/hg/matrix/types/request/register/types/MatrixRegisterKind";
 
 const LOG = LogService.createLogger('HgHsBackendController');
 
@@ -177,6 +182,35 @@ export class HgHsBackendController {
         try {
 
             LOG.debug(`roomId = `, roomId);
+
+            return ResponseEntity.ok(
+                {
+                    hello: 'world'
+                } as unknown as ReadonlyJsonObject
+            );
+
+        } catch (err) {
+            LOG.error(`ERROR: `, err);
+            return ResponseEntity.internalServerError<{readonly error: string}>().body(
+                createErrorDTO('Internal Server Error', 500)
+            );
+        }
+    }
+
+    @PostMapping("/_matrix/client/r0/register")
+    public static async registerUser (
+        @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
+            required: false,
+            defaultValue: ''
+        })
+            token: string,
+        @RequestParam('kind', RequestParamValueType.STRING)
+            kindString = ""
+    ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
+        try {
+
+            const kind : string | undefined = parseMatrixRegisterKind(kindString);
+            LOG.debug(`kind = `, kind);
 
             return ResponseEntity.ok(
                 {
