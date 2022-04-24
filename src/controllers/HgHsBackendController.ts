@@ -73,6 +73,11 @@ export class HgHsBackendController {
         }
     }
 
+    /**
+     *
+     * @param token
+     * @see https://github.com/heusalagroup/hghs/issues/1
+     */
     @PostMapping("/_synapse/admin/v1/register")
     public static async postSynapseAdminRegister (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
@@ -97,6 +102,11 @@ export class HgHsBackendController {
         }
     }
 
+    /**
+     *
+     * @param token
+     * @see https://github.com/heusalagroup/hghs/issues/2
+     */
     @GetMapping("/_matrix/client/r0/account/whoami")
     public static async accountWhoAmI (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
@@ -121,6 +131,11 @@ export class HgHsBackendController {
         }
     }
 
+    /**
+     *
+     * @param token
+     * @see https://github.com/heusalagroup/hghs/issues/3
+     */
     @PostMapping("/_matrix/client/r0/login")
     public static async login (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
@@ -145,6 +160,12 @@ export class HgHsBackendController {
         }
     }
 
+    /**
+     *
+     * @param token
+     * @param roomAlias
+     * @see https://github.com/heusalagroup/hghs/issues/4
+     */
     @GetMapping("/_matrix/client/r0/directory/room/:roomAlias")
     public static async getDirectoryRoomByName (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
@@ -173,6 +194,12 @@ export class HgHsBackendController {
         }
     }
 
+    /**
+     *
+     * @param token
+     * @param roomId
+     * @see https://github.com/heusalagroup/hghs/issues/5
+     */
     @GetMapping("/_matrix/client/r0/rooms/:roomId/joined_members")
     public static async getRoomJoinedMembers (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
@@ -201,6 +228,12 @@ export class HgHsBackendController {
         }
     }
 
+    /**
+     *
+     * @param token
+     * @param kindString
+     * @see https://github.com/heusalagroup/hghs/issues/6
+     */
     @PostMapping("/_matrix/client/r0/register")
     public static async registerUser (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
@@ -230,6 +263,14 @@ export class HgHsBackendController {
         }
     }
 
+    /**
+     *
+     * @param token
+     * @param roomId
+     * @param eventType
+     * @param stateKey
+     * @see https://github.com/heusalagroup/hghs/issues/7
+     */
     @GetMapping("/_matrix/client/r0/rooms/:roomId/state/:eventType/:stateKey")
     public static async getRoomStateByType (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
@@ -262,6 +303,14 @@ export class HgHsBackendController {
         }
     }
 
+    /**
+     *
+     * @param token
+     * @param roomId
+     * @param eventType
+     * @param stateKey
+     * @see https://github.com/heusalagroup/hghs/issues/8
+     */
     @PutMapping("/_matrix/client/r0/rooms/:roomId/state/:eventType/:stateKey")
     public static async setRoomStateByType (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
@@ -294,6 +343,12 @@ export class HgHsBackendController {
         }
     }
 
+    /**
+     *
+     * @param token
+     * @param roomId
+     * @see https://github.com/heusalagroup/hghs/issues/9
+     */
     @PostMapping("/_matrix/client/r0/rooms/:roomId/forget")
     public static async forgetRoom (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
@@ -322,6 +377,12 @@ export class HgHsBackendController {
         }
     }
 
+    /**
+     *
+     * @param token
+     * @param roomId
+     * @see https://github.com/heusalagroup/hghs/issues/10
+     */
     @PostMapping("/_matrix/client/r0/rooms/:roomId/leave")
     public static async leaveRoom (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
@@ -350,6 +411,12 @@ export class HgHsBackendController {
         }
     }
 
+    /**
+     *
+     * @param token
+     * @param roomId
+     * @see https://github.com/heusalagroup/hghs/issues/11
+     */
     @PostMapping("/_matrix/client/r0/rooms/:roomId/invite")
     public static async inviteToRoom (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
@@ -378,6 +445,14 @@ export class HgHsBackendController {
         }
     }
 
+    /**
+     *
+     * @param token
+     * @param roomId
+     * @param eventName
+     * @param tnxId
+     * @see https://github.com/heusalagroup/hghs/issues/12
+     */
     @PutMapping("/_matrix/client/v3/rooms/:roomId/send/:eventName/:tnxId")
     public static async sendEventToRoomWithTnxId (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
@@ -410,6 +485,11 @@ export class HgHsBackendController {
         }
     }
 
+    /**
+     *
+     * @param token
+     * @see https://github.com/heusalagroup/hghs/issues/13
+     */
     @PostMapping("/_matrix/client/r0/createRoom")
     public static async createRoom (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
@@ -436,6 +516,12 @@ export class HgHsBackendController {
         }
     }
 
+    /**
+     *
+     * @param token
+     * @param roomId
+     * @see https://github.com/heusalagroup/hghs/issues/14
+     */
     @PostMapping("/_matrix/client/r0/rooms/:roomId/join")
     public static async joinToRoom (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
@@ -464,6 +550,16 @@ export class HgHsBackendController {
         }
     }
 
+    /**
+     *
+     * @param token
+     * @param filter
+     * @param since
+     * @param full_state
+     * @param set_presence
+     * @param timeout
+     * @see https://github.com/heusalagroup/hghs/issues/15
+     */
     @GetMapping("/_matrix/client/r0/sync")
     public static async sync (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
