@@ -290,4 +290,32 @@ export class HgHsBackendController {
         }
     }
 
+    @PostMapping("/_matrix/client/r0/rooms/:roomId/forget")
+    public static async forgetRoom (
+        @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
+            required: false,
+            defaultValue: ''
+        })
+        token: string,
+        @PathVariable('roomId', {required: true})
+        roomId = ""
+    ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
+        try {
+
+            LOG.debug(`set: roomId = `, roomId);
+
+            return ResponseEntity.ok(
+                {
+                    hello: 'world'
+                } as unknown as ReadonlyJsonObject
+            );
+
+        } catch (err) {
+            LOG.error(`ERROR: `, err);
+            return ResponseEntity.internalServerError<{readonly error: string}>().body(
+                createErrorDTO('Internal Server Error', 500)
+            );
+        }
+    }
+
 }
