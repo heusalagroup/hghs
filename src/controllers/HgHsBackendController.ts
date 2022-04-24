@@ -32,6 +32,7 @@ import { createMatrixRoomJoinedMembersDTO, MatrixRoomJoinedMembersDTO } from "..
 import { createMatrixRoomJoinedMembersRoomMemberDTO } from "../fi/hg/matrix/types/response/roomJoinedMembers/types/MatrixRoomJoinedMembersRoomMemberDTO";
 import { isMatrixMatrixRegisterRequestDTO } from "../fi/hg/matrix/types/request/register/MatrixRegisterRequestDTO";
 import { createMatrixRegisterResponseDTO } from "../fi/hg/matrix/types/response/register/MatrixRegisterResponseDTO";
+import { createGetRoomStateByTypeResponseDTO } from "../fi/hg/matrix/types/response/getRoomStateByType/GetRoomStateByTypeResponseDTO";
 
 const LOG = LogService.createLogger('HgHsBackendController');
 
@@ -371,10 +372,10 @@ export class HgHsBackendController {
 
             LOG.debug(`roomId = `, roomId, eventType, stateKey);
 
+            const responseDto = createGetRoomStateByTypeResponseDTO('roomName');
+
             return ResponseEntity.ok(
-                {
-                    hello: 'world'
-                } as unknown as ReadonlyJsonObject
+                responseDto as unknown as ReadonlyJsonObject
             );
 
         } catch (err) {
