@@ -226,4 +226,36 @@ export class HgHsBackendController {
         }
     }
 
+    @GetMapping("/_matrix/client/r0/rooms/:roomId/state/:eventType/:stateKey")
+    public static async getRoomStateByType (
+        @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
+            required: false,
+            defaultValue: ''
+        })
+        token: string,
+        @PathVariable('roomId', {required: true})
+        roomId = "",
+        @PathVariable('eventType', {required: true})
+        eventType = "",
+        @PathVariable('stateKey', {required: true})
+        stateKey = ""
+    ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
+        try {
+
+            LOG.debug(`roomId = `, roomId, eventType, stateKey);
+
+            return ResponseEntity.ok(
+                {
+                    hello: 'world'
+                } as unknown as ReadonlyJsonObject
+            );
+
+        } catch (err) {
+            LOG.error(`ERROR: `, err);
+            return ResponseEntity.internalServerError<{readonly error: string}>().body(
+                createErrorDTO('Internal Server Error', 500)
+            );
+        }
+    }
+
 }
