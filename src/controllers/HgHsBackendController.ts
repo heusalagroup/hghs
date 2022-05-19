@@ -174,6 +174,15 @@ export class HgHsBackendController {
                 ).status(400);
             }
 
+            // if Username exists allready
+            let userExists = await MemoryMatrixUserRepositoryService.IfUsernameExist(matrixUserId);
+
+            if (userExists) {
+                return ResponseEntity.badRequest<ErrorDTO>().body(
+                    createErrorDTO(`Username allready exist`, 400)
+                ).status(400);
+            }
+
             const registerAdmin = {
                 "nonce": nonce, // body.nonce OIKEASTI
                 "username": matrixUserId,
@@ -209,7 +218,7 @@ export class HgHsBackendController {
             console.log("USER: ", JSON.stringify(user));
 
             // TOKEN
-            let access_token = await this._matrixServer.createToken(matrixUserId, shared_secret);
+            let access_token = await this._matrixServer.createToken(matrixUserId, device_id, shared_secret);
 
             // @FIXME: Implement the end point
             const response : SynapseRegisterResponseDTO = createSynapseRegisterResponseDTO(
@@ -245,10 +254,16 @@ export class HgHsBackendController {
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
+            let thistoken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTI5NjM2MTAsInVzZXJfaWQiOiJAa29pcnV1czpsb2NhbGhvc3QiLCJkZXZpY2VfaWQiOiJqMTJoeXQzNCIsImlhdCI6MTY1Mjk2MDAxMH0.GMhvO-n_frB3O7XdetiXZO37OvcX5tl1Tni45lfAnQE";
+
+            let whoami = await this._matrixServer.whoami(thistoken);
+            console.log("WHOAMI", JSON.stringify(whoami));
+
+
             // @FIXME: Implement https://github.com/heusalagroup/hghs/issues/2
             const response = createMatrixWhoAmIResponseDTO(
-                'user_id',
-                'device_id',
+                whoami.user_id.toString(),
+                whoami.device_id.toString(),
                 false
             );
 
@@ -281,6 +296,34 @@ export class HgHsBackendController {
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
+            // CLIENT:
+            /*
+                const home_server = body.home_server; // URL:ista ?
+                const device_id= body.device_id; // get where?
+                const shared_secred = body.shared_secred; //pem ?
+            */
+            //
+
+            // clientilta tulevat tiedot VAIHDA OIKEIKSI ____________
+            const home_server = process.env.HOME_SERVER;
+            const device_id = body.device_id;
+            const shared_secret = process.env.SHARED_SECRET;
+            //------------------------------------------------
+
+
+            /*
+            {
+                "identifier": {"type": "m.id.user","user":"@koiruus:localhost"},
+                "initial_device_display_name": "Jungle Phone",
+                "device_id": "testi",
+                "address":"testi",
+                "token": "45trhyy",
+                "medium":"email",
+                "password": "kissankuppi",
+                "type": "m.login.password"
+            }
+             */
+
             if (!isMatrixLoginRequestDTO(body)) {
                 // @FIXME: Fix to use correct error DTO from Matrix Spec
                 return ResponseEntity.badRequest<ErrorDTO>().body(
@@ -288,12 +331,45 @@ export class HgHsBackendController {
                 ).status(400);
             }
 
+            // find user
+            let loginUser = await MemoryMatrixUserRepositoryService.findByUsername(body.identifier.user);
+
+            if (loginUser) {
+
+                let hash = 64;
+                let isPasswordValid: boolean = await this._matrixServer.isValidPassword(body.password, loginUser.password, hash);
+
+                if (isPasswordValid === false) {
+                    return ResponseEntity.badRequest<ErrorDTO>().body(
+                        createErrorDTO(`Unauthorized, Wrong password`, 401)
+                    ).status(400);
+                }
+                if (isPasswordValid === true) { //jos password validi
+
+                    // if initial_device_display_name
+                    if (body.initial_device_display_name) {
+
+                        const newDevice = { id: device_id, name: body.initial_device_display_name };
+
+                        // add new device
+                        loginUser = await MemoryMatrixUserRepositoryService.createNewDevice(loginUser, newDevice);
+                        // pitää lisätä arvo joka kertoo mikä device_id käytössä nyt ?
+
+                    }
+                    await MemoryMatrixUserRepositoryService.getAll();
+
+                    //luodaan token
+                    let access_token = await this._matrixServer.createToken(body.identifier.user, body.device_id, shared_secret);
+
+
+
+
             // @FIXME: Implement https://github.com/heusalagroup/hghs/issues/3
             const responseDto : MatrixLoginResponseDTO = createMatrixLoginResponseDTO(
-                'user_id',
-                'access_token',
-                'home_server',
-                'device_id',
+                body.identifier.user,
+                access_token,
+                home_server,
+                body.device_id, // mistä tulee ?
                 createMatrixDiscoveryInformationDTO(
                     createMatrixHomeServerDTO('base_url'),
                     createMatrixIdentityServerInformationDTO('base_url')
@@ -301,6 +377,14 @@ export class HgHsBackendController {
             );
 
             return ResponseEntity.ok( responseDto as unknown as ReadonlyJsonObject );
+
+                } //jos kaikki meni ok
+            } //jos kirjautunut käyttäjä
+            else {
+                return ResponseEntity.badRequest<ErrorDTO>().body(
+                    createErrorDTO(`Unauthorized, Wrong user`, 401)
+                ).status(400);
+            }
 
         } catch (err) {
             LOG.error(`ERROR: `, err);
