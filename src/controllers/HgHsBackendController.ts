@@ -47,6 +47,10 @@ import { createMatrixJoinRoomResponseDTO } from "../fi/hg/matrix/types/response/
 import { createMatrixSyncResponseDTO, MatrixSyncResponseDTO } from "../fi/hg/matrix/types/response/sync/MatrixSyncResponseDTO";
 import { MatrixServerService } from "../fi/hg/matrix/server/MatrixServerService";
 
+import { MemoryMatrixUserRepositoryService } from "../fi/hg/matrix/server/repository/memory/MemoryMatrixUserReposityService"
+import { isMatrixUserId } from "../fi/hg/matrix/types/core/MatrixUserId";
+import { DeviceModel } from "../fi/hg/matrix/server/types/DeviceModel";
+
 const LOG = LogService.createLogger('HgHsBackendController');
 
 @RequestMapping("/")
@@ -87,7 +91,7 @@ export class HgHsBackendController {
      * @param token
      * @see https://github.com/heusalagroup/hghs/issues/1
      */
-    @GetMapping("/_synapse/admin/v1/register")
+    @GetMapping("/_fi.hg.hs/admin/v1/register")
     public static async getSynapseAdminRegister (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
             required: false,
@@ -118,7 +122,7 @@ export class HgHsBackendController {
      * @param body
      * @see https://github.com/heusalagroup/hghs/issues/1
      */
-    @PostMapping("/_synapse/admin/v1/register")
+    @PostMapping("/_fi.hg.hs/admin/v1/register")
     public static async postSynapseAdminRegister (
         @RequestHeader(MATRIX_AUTHORIZATION_HEADER_NAME, {
             required: false,
@@ -130,19 +134,89 @@ export class HgHsBackendController {
     ): Promise<ResponseEntity<ReadonlyJsonObject | {readonly error: string}>> {
         try {
 
-            if ( !isSynapseRegisterRequestDTO(body) ) {
+            // CLIENT:
+            /*
+            conts nonce = body.nonse;
+            const admin = body.admin;
+            const username = body.username;
+            const displayname = body.displayname;
+            const password = body.password;
+            const mac = body.mac;
+                const home_server = body.home_server; // URL:ista ?
+                const device_id= body.device_id; // get where?
+                const shared_secred = body.shared_secred; //pem ?
+            */
+
+            // clientilta tulevat tiedot VAIHDA OIKEIKSI ____________
+            const nonce = process.env.NONCE;
+            const admin = true;
+            const home_server = process.env.HOME_SERVER;
+            const device_id = process.env.DEVICE_ID;
+            const shared_secret = process.env.SHARED_SECRET;
+
+            // tarvitaan alla olevaan macin luontiin
+            let isAdmin = body.admin ? "admin" : "noadmin";
+
+            // sama koodi kuin simpleMatrixClient -helpottamaan oikean mac luontia jos tarvitaan johonkin
+            let mac = await this._matrixServer.generateMac(shared_secret, nonce, body.username.toString(), body.password.toString(), isAdmin, 'None');
+            // _________________________________________________________
+
+            // crypt password 
+            let salt = await this._matrixServer.createSalt();
+            let hash = 64;
+            let key = await this._matrixServer.createCryptoPassword(body.password, salt, hash);
+
+            // username is like matrixUserId
+            let matrixUserId: string = '@' + body.username.toString() + ':' + home_server.toString();
+            if (!isMatrixUserId(matrixUserId)) {
+                return ResponseEntity.badRequest<ErrorDTO>().body(
+                    createErrorDTO(`userId not MatrixUserId`, 400)
+                ).status(400);
+            }
+
+            const registerAdmin = {
+                "nonce": nonce, // body.nonce OIKEASTI
+                "username": matrixUserId,
+                "displayname": body.displayname,
+                "password": key,
+                "admin": body.admin,
+                "mac": mac // body.mac
+            }
+
+            console.log(JSON.stringify(registerAdmin));
+
+            if (!isSynapseRegisterRequestDTO(registerAdmin)) {
                 // @FIXME: Fix to use correct error DTO from Matrix Spec
                 return ResponseEntity.badRequest<ErrorDTO>().body(
                     createErrorDTO(`Body not AuthenticateEmailDTO`, 400)
                 ).status(400);
             }
 
+            let usersDevices: DeviceModel[] = [];
+
+            usersDevices.push({ id: device_id });
+
+            let newUserItem = {
+                username: registerAdmin.username,
+                password: registerAdmin.password,
+                displayname: registerAdmin.displayname,
+                homeserver: home_server,
+                devices: usersDevices
+            }
+
+            // add User
+            let user = await MemoryMatrixUserRepositoryService.createItem(newUserItem);
+            console.log("USER: ", JSON.stringify(user));
+
+            // TOKEN
+            let access_token = await this._matrixServer.createToken(matrixUserId, shared_secret);
+
             // @FIXME: Implement the end point
             const response : SynapseRegisterResponseDTO = createSynapseRegisterResponseDTO(
-                'access_token',
-                'user_id',
-                'home_server',
-                'device_id'
+                access_token,
+                matrixUserId,
+                home_server,
+                device_id
             );
 
             return ResponseEntity.ok( response as unknown as ReadonlyJsonObject );

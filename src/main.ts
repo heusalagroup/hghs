@@ -28,6 +28,7 @@ import { BUILD_USAGE_URL, BUILD_WITH_FULL_USAGE } from "./constants/build";
 import { MatrixServerService } from "./fi/hg/matrix/server/MatrixServerService";
 import { MemoryMatrixRepositoryService } from "./fi/hg/matrix/server/repository/memory/MemoryMatrixRepositoryService";
 import { MatrixRepositoryService } from "./fi/hg/matrix/server/types/MatrixRepositoryService";
+import 'dotenv/config';
 
 const LOG = LogService.createLogger('main');
 
