@@ -8,7 +8,7 @@ ProcessUtils.initEnvFromDefaultFiles();
 import {
     BACKEND_SCRIPT_NAME,
     BACKEND_LOG_LEVEL,
-    BACKEND_URL
+    BACKEND_URL, BACKEND_HOSTNAME, BACKEND_IO_SERVER
 } from "./constants/runtime";
 
 import { LogService } from "./fi/hg/core/LogService";
@@ -21,13 +21,27 @@ import { RequestClient } from "./fi/hg/core/RequestClient";
 import { CommandArgumentUtils } from "./fi/hg/core/cmd/utils/CommandArgumentUtils";
 import { ParsedCommandArgumentStatus } from "./fi/hg/core/cmd/types/ParsedCommandArgumentStatus";
 import { RequestServer } from "./fi/hg/core/RequestServer";
-import { HgHsBackendController } from "./controllers/HgHsBackendController";
+import { HsBackendController } from "./controllers/HsBackendController";
 import { RequestRouter } from "./fi/hg/core/requestServer/RequestRouter";
 import { Headers } from "./fi/hg/core/request/Headers";
 import { BUILD_USAGE_URL, BUILD_WITH_FULL_USAGE } from "./constants/build";
 import { MatrixServerService } from "./fi/hg/matrix/server/MatrixServerService";
-import { MemoryMatrixRepositoryService } from "./fi/hg/matrix/server/repository/memory/MemoryMatrixRepositoryService";
-import { MatrixRepositoryService } from "./fi/hg/matrix/server/types/MatrixRepositoryService";
+import { RepositoryType } from "./fi/hg/core/simpleRepository/types/RepositoryType";
+import { startsWith } from "./fi/hg/core/modules/lodash";
+import { MatrixSharedClientService } from "./fi/hg/matrix/MatrixSharedClientService";
+import { MemorySharedClientService } from "./fi/hg/core/simpleRepository/MemorySharedClientService";
+import { isStoredDeviceRepositoryItem, StoredDeviceRepositoryItem } from "./fi/hg/matrix/server/types/repository/device/StoredDeviceRepositoryItem";
+import { DeviceRepositoryService } from "./fi/hg/matrix/server/types/repository/device/DeviceRepositoryService";
+import { IO_DEVICE_ROOM_TYPE, IO_EVENT_ROOM_TYPE, IO_ROOM_ROOM_TYPE, IO_USER_ROOM_TYPE } from "./constants/io";
+import { StoredRepositoryItem, StoredRepositoryItemTestCallback } from "./fi/hg/core/simpleRepository/types/StoredRepositoryItem";
+import { MatrixRepositoryInitializer } from "./fi/hg/matrix/MatrixRepositoryInitializer";
+import { MemoryRepositoryInitializer } from "./fi/hg/core/simpleRepository/MemoryRepositoryInitializer";
+import { isStoredUserRepositoryItem, StoredUserRepositoryItem } from "./fi/hg/matrix/server/types/repository/user/StoredUserRepositoryItem";
+import { UserRepositoryService } from "./fi/hg/matrix/server/types/repository/user/UserRepositoryService";
+import { RoomRepositoryService } from "./fi/hg/matrix/server/types/repository/room/RoomRepositoryService";
+import { isStoredRoomRepositoryItem, StoredRoomRepositoryItem } from "./fi/hg/matrix/server/types/repository/room/StoredRoomRepositoryItem";
+import { isStoredEventRepositoryItem, StoredEventRepositoryItem } from "./fi/hg/matrix/server/types/repository/event/StoredEventRepositoryItem";
+import { EventRepositoryService } from "./fi/hg/matrix/server/types/repository/event/EventRepositoryService";
 
 const LOG = LogService.createLogger('main');
 
@@ -56,12 +70,76 @@ export async function main (
             return exitStatus;
         }
 
-        const matrixRepository : MatrixRepositoryService = new MemoryMatrixRepositoryService();
-        const matrixServer : MatrixServerService = new MatrixServerService(matrixRepository);
-        HgHsBackendController.setMatrixServer( matrixServer );
+        const repositoryType : RepositoryType = startsWith(BACKEND_IO_SERVER, 'memory:') ? RepositoryType.MEMORY : RepositoryType.MATRIX;
+
+        const matrixSharedClientService = new MatrixSharedClientService();
+        const memorySharedClientService = new MemorySharedClientService();
+
+        // Device repository
+        const deviceRepositoryService = await constructRepository<StoredDeviceRepositoryItem>(
+            repositoryType,
+            isStoredDeviceRepositoryItem,
+            IO_DEVICE_ROOM_TYPE,
+            matrixSharedClientService,
+            memorySharedClientService,
+            DeviceRepositoryService
+        );
+
+        // User repository
+        const userRepositoryService = await constructRepository<StoredUserRepositoryItem>(
+            repositoryType,
+            isStoredUserRepositoryItem,
+            IO_USER_ROOM_TYPE,
+            matrixSharedClientService,
+            memorySharedClientService,
+            UserRepositoryService
+        );
+
+        // Room repository
+        const roomRepositoryService = await constructRepository<StoredRoomRepositoryItem>(
+            repositoryType,
+            isStoredRoomRepositoryItem,
+            IO_ROOM_ROOM_TYPE,
+            matrixSharedClientService,
+            memorySharedClientService,
+            RoomRepositoryService
+        );
+
+        // Event repository
+        const eventRepositoryService = await constructRepository<StoredEventRepositoryItem>(
+            repositoryType,
+            isStoredEventRepositoryItem,
+            IO_EVENT_ROOM_TYPE,
+            matrixSharedClientService,
+            memorySharedClientService,
+            EventRepositoryService
+        );
+
+        const matrixServer : MatrixServerService = new MatrixServerService(
+            BACKEND_HOSTNAME,
+            deviceRepositoryService,
+            userRepositoryService,
+            roomRepositoryService,
+            eventRepositoryService
+        );
+
+        // Initialize repositories
+        if (repositoryType === RepositoryType.MATRIX) {
+            await matrixSharedClientService.initialize(BACKEND_IO_SERVER);
+        } else if (repositoryType === RepositoryType.MEMORY) {
+            await memorySharedClientService.initialize(BACKEND_IO_SERVER);
+        }
+        await deviceRepositoryService.initialize();
+        await userRepositoryService.initialize();
+        await roomRepositoryService.initialize();
+        await eventRepositoryService.initialize();
+
+        await matrixServer.initialize();
+
+        HsBackendController.setMatrixServer(matrixServer);
 
         const server = new RequestServer(BACKEND_URL);
-        server.attachController(HgHsBackendController);
+        server.attachController(HsBackendController);
         server.start();
 
         let serverListener : any = undefined;
@@ -142,4 +220,26 @@ export function getMainUsage (
 See ${/* @__PURE__ */BUILD_USAGE_URL}
 `;
     }
+}
+
+async function constructRepository<T extends StoredRepositoryItem> (
+    repositoryType      : RepositoryType,
+    isT                 : StoredRepositoryItemTestCallback,
+    matrixRoomType      : string,
+    matrixClientService : MatrixSharedClientService,
+    memoryClientService : MemorySharedClientService,
+    ItemRepositoryService : any
+) : Promise<any> {
+
+    if (repositoryType === RepositoryType.MATRIX) {
+        const matrixRepositoryInitializer = new MatrixRepositoryInitializer<T>( matrixRoomType, isT );
+        return new ItemRepositoryService(matrixClientService, matrixRepositoryInitializer);
+    }
+
+    if (repositoryType === RepositoryType.MEMORY) {
+        const memoryRepositoryInitializer = new MemoryRepositoryInitializer<T>( isT );
+        return new ItemRepositoryService(memoryClientService, memoryRepositoryInitializer);
+    }
+
+    throw new TypeError(`Repository type not supported: ${repositoryType}`);
 }

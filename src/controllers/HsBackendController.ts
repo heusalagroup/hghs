@@ -1,20 +1,10 @@
 // Copyright (c) 2022. Heusala Group <info@heusalagroup.fi>. All rights reserved.
 
-import {
-    GetMapping,
-    PathVariable,
-    PostMapping,
-    PutMapping,
-    RequestBody,
-    RequestHeader,
-    RequestMapping,
-    RequestParam
-} from "../fi/hg/core/Request";
+import { GetMapping, PathVariable, PostMapping, PutMapping, RequestBody, RequestHeader, RequestMapping, RequestParam } from "../fi/hg/core/Request";
 import { ReadonlyJsonObject } from "../fi/hg/core/Json";
 import { ResponseEntity } from "../fi/hg/core/request/ResponseEntity";
 import { LogService } from "../fi/hg/core/LogService";
 import { MATRIX_AUTHORIZATION_HEADER_NAME } from "../fi/hg/matrix/constants/matrix-routes";
-import { createErrorDTO, ErrorDTO } from "../fi/hg/core/types/ErrorDTO";
 import { RequestParamValueType } from "../fi/hg/core/request/types/RequestParamValueType";
 import { parseMatrixRegisterKind } from "../fi/hg/matrix/types/request/register/types/MatrixRegisterKind";
 import { createSynapsePreRegisterResponseDTO } from "../fi/hg/matrix/types/synapse/SynapsePreRegisterResponseDTO";
@@ -46,11 +36,14 @@ import { isMatrixJoinRoomRequestDTO } from "../fi/hg/matrix/types/request/joinRo
 import { createMatrixJoinRoomResponseDTO } from "../fi/hg/matrix/types/response/joinRoom/MatrixJoinRoomResponseDTO";
 import { createMatrixSyncResponseDTO, MatrixSyncResponseDTO } from "../fi/hg/matrix/types/response/sync/MatrixSyncResponseDTO";
 import { MatrixServerService } from "../fi/hg/matrix/server/MatrixServerService";
+import { MatrixLoginType } from "../fi/hg/matrix/types/request/login/MatrixLoginType";
+import { createMatrixErrorDTO, MatrixErrorDTO } from "../fi/hg/matrix/types/response/error/MatrixErrorDTO";
+import { MatrixErrorCode } from "../fi/hg/matrix/types/response/error/types/MatrixErrorCode";
 
-const LOG = LogService.createLogger('HgHsBackendController');
+const LOG = LogService.createLogger('HsBackendController');
 
 @RequestMapping("/")
-export class HgHsBackendController {
+export class HsBackendController {
 
     private static _matrixServer : MatrixServerService | undefined;
 
@@ -78,7 +71,7 @@ export class HgHsBackendController {
             LOG.error(`ERROR: `, err);
             // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
-                createErrorDTO('Internal Server Error', 500)
+                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,'Internal Server Error')
             );
         }
     }
@@ -107,7 +100,7 @@ export class HgHsBackendController {
             LOG.error(`ERROR: `, err);
             // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
-                createErrorDTO('Internal Server Error', 500)
+                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
         }
     }
@@ -132,8 +125,8 @@ export class HgHsBackendController {
 
             if ( !isSynapseRegisterRequestDTO(body) ) {
                 // @FIXME: Fix to use correct error DTO from Matrix Spec
-                return ResponseEntity.badRequest<ErrorDTO>().body(
-                    createErrorDTO(`Body not AuthenticateEmailDTO`, 400)
+                return ResponseEntity.badRequest<MatrixErrorDTO>().body(
+                    createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Body not AuthenticateEmailDTO`)
                 ).status(400);
             }
 
@@ -151,7 +144,7 @@ export class HgHsBackendController {
             LOG.error(`ERROR: `, err);
             // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
-                createErrorDTO('Internal Server Error', 500)
+                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
         }
     }
@@ -184,7 +177,7 @@ export class HgHsBackendController {
             LOG.error(`ERROR: `, err);
             // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
-                createErrorDTO('Internal Server Error', 500)
+                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
         }
     }
@@ -209,20 +202,47 @@ export class HgHsBackendController {
 
             if (!isMatrixLoginRequestDTO(body)) {
                 // @FIXME: Fix to use correct error DTO from Matrix Spec
-                return ResponseEntity.badRequest<ErrorDTO>().body(
-                    createErrorDTO(`Body not AuthenticateEmailDTO`, 400)
+                return ResponseEntity.badRequest<MatrixErrorDTO>().body(
+                    createMatrixErrorDTO(MatrixErrorCode.M_FORBIDDEN, `Body not AuthenticateEmailDTO`)
                 ).status(400);
             }
 
+            if (body?.type !== MatrixLoginType.M_LOGIN_PASSWORD) {
+                return ResponseEntity.badRequest<MatrixErrorDTO>().body(
+                    createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Only type M_LOGIN_PASSWORD supported`)
+                ).status(400);
+            }
+
+            const user = body?.user;
+            const password = body?.password;
+
+            if ( !user || !password ) {
+                return ResponseEntity.badRequest<MatrixErrorDTO>().body(
+                    createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`User or password property not defined`)
+                ).status(400);
+            }
+
+            const deviceId = body?.device_id;
+
+            const accessToken = await this._matrixServer.loginWithPassword(deviceId, user, password);
+
+            if (!accessToken) {
+                return ResponseEntity.badRequest<MatrixErrorDTO>().body(
+                    createMatrixErrorDTO(MatrixErrorCode.M_FORBIDDEN, `Access denied`)
+                ).status(403);
+            }
+
+            const backendHostname = this._matrixServer.getHostName();
+
             // @FIXME: Implement https://github.com/heusalagroup/hghs/issues/3
             const responseDto : MatrixLoginResponseDTO = createMatrixLoginResponseDTO(
-                'user_id',
-                'access_token',
-                'home_server',
-                'device_id',
+                user,
+                accessToken,
+                backendHostname,
+                deviceId,
                 createMatrixDiscoveryInformationDTO(
-                    createMatrixHomeServerDTO('base_url'),
-                    createMatrixIdentityServerInformationDTO('base_url')
+                    createMatrixHomeServerDTO(backendHostname),
+                    createMatrixIdentityServerInformationDTO(backendHostname)
                 )
             );
 
@@ -232,7 +252,7 @@ export class HgHsBackendController {
             LOG.error(`ERROR: `, err);
             // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
-                createErrorDTO('Internal Server Error', 500)
+                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
         }
     }
@@ -270,7 +290,7 @@ export class HgHsBackendController {
             LOG.error(`ERROR: `, err);
             // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
-                createErrorDTO('Internal Server Error', 500)
+                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
         }
     }
@@ -309,7 +329,7 @@ export class HgHsBackendController {
             LOG.error(`ERROR: `, err);
             // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
-                createErrorDTO('Internal Server Error', 500)
+                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
         }
     }
@@ -340,8 +360,8 @@ export class HgHsBackendController {
 
             if (!isMatrixMatrixRegisterRequestDTO(body)) {
                 // @FIXME: Fix to use correct error DTO from Matrix Spec
-                return ResponseEntity.badRequest<ErrorDTO>().body(
-                    createErrorDTO(`Body not MatrixMatrixRegisterRequestDTO`, 400)
+                return ResponseEntity.badRequest<MatrixErrorDTO>().body(
+                    createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Body not MatrixMatrixRegisterRequestDTO`)
                 ).status(400);
             }
 
@@ -361,7 +381,7 @@ export class HgHsBackendController {
             LOG.error(`ERROR: `, err);
             // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
-                createErrorDTO('Internal Server Error', 500)
+                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
         }
     }
@@ -402,7 +422,7 @@ export class HgHsBackendController {
             LOG.error(`ERROR: `, err);
             // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
-                createErrorDTO('Internal Server Error', 500)
+                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
         }
     }
@@ -438,8 +458,8 @@ export class HgHsBackendController {
 
             if (!isSetRoomStateByTypeRequestDTO(body)) {
                 // @FIXME: Fix to use correct error DTO from Matrix Spec
-                return ResponseEntity.badRequest<ErrorDTO>().body(
-                    createErrorDTO(`Body not SetRoomStateByTypeRequestDTO`, 400)
+                return ResponseEntity.badRequest<MatrixErrorDTO>().body(
+                    createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Body not SetRoomStateByTypeRequestDTO`)
                 ).status(400);
             }
 
@@ -456,7 +476,7 @@ export class HgHsBackendController {
             LOG.error(`ERROR: `, err);
             // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
-                createErrorDTO('Internal Server Error', 500)
+                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
         }
     }
@@ -490,7 +510,7 @@ export class HgHsBackendController {
             LOG.error(`ERROR: `, err);
             // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
-                createErrorDTO('Internal Server Error', 500)
+                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
         }
     }
@@ -520,8 +540,8 @@ export class HgHsBackendController {
 
             if (!isMatrixLeaveRoomRequestDTO(body)) {
                 // @FIXME: Fix to use correct error DTO from Matrix Spec
-                return ResponseEntity.badRequest<ErrorDTO>().body(
-                    createErrorDTO(`Body not MatrixLeaveRoomRequestDTO`, 400)
+                return ResponseEntity.badRequest<MatrixErrorDTO>().body(
+                    createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Body not MatrixLeaveRoomRequestDTO`)
                 ).status(400);
             }
 
@@ -535,7 +555,7 @@ export class HgHsBackendController {
             LOG.error(`ERROR: `, err);
             // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
-                createErrorDTO('Internal Server Error', 500)
+                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
         }
     }
@@ -565,8 +585,8 @@ export class HgHsBackendController {
 
             if (!isMatrixInviteToRoomRequestDTO(body)) {
                 // @FIXME: Fix to use correct error DTO from Matrix Spec
-                return ResponseEntity.badRequest<ErrorDTO>().body(
-                    createErrorDTO(`Body not MatrixInviteToRoomRequestDTO`, 400)
+                return ResponseEntity.badRequest<MatrixErrorDTO>().body(
+                    createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Body not MatrixInviteToRoomRequestDTO`)
                 ).status(400);
             }
 
@@ -581,7 +601,7 @@ export class HgHsBackendController {
             LOG.error(`ERROR: `, err);
             // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
-                createErrorDTO('Internal Server Error', 500)
+                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
         }
     }
@@ -617,8 +637,8 @@ export class HgHsBackendController {
 
             if (!isMatrixTextMessageDTO(body)) {
                 // @FIXME: Fix to use correct error DTO from Matrix Spec
-                return ResponseEntity.badRequest<ErrorDTO>().body(
-                    createErrorDTO(`Body not MatrixTextMessageDTO`, 400)
+                return ResponseEntity.badRequest<MatrixErrorDTO>().body(
+                    createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Body not MatrixTextMessageDTO`)
                 ).status(400);
             }
 
@@ -633,7 +653,7 @@ export class HgHsBackendController {
             LOG.error(`ERROR: `, err);
             // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
-                createErrorDTO('Internal Server Error', 500)
+                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
         }
     }
@@ -658,8 +678,8 @@ export class HgHsBackendController {
 
             if (!isMatrixCreateRoomDTO(body)) {
                 // @FIXME: Fix to use correct error DTO from Matrix Spec
-                return ResponseEntity.badRequest<ErrorDTO>().body(
-                    createErrorDTO(`Body not MatrixCreateRoomDTO`, 400)
+                return ResponseEntity.badRequest<MatrixErrorDTO>().body(
+                    createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Body not MatrixCreateRoomDTO`)
                 ).status(400);
             }
 
@@ -679,7 +699,7 @@ export class HgHsBackendController {
             LOG.error(`ERROR: `, err);
             // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
-                createErrorDTO('Internal Server Error', 500)
+                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
         }
     }
@@ -707,8 +727,8 @@ export class HgHsBackendController {
 
             if (!isMatrixJoinRoomRequestDTO(body)) {
                 // @FIXME: Fix to use correct error DTO from Matrix Spec
-                return ResponseEntity.badRequest<ErrorDTO>().body(
-                    createErrorDTO(`Body not MatrixJoinRoomRequestDTO`, 400)
+                return ResponseEntity.badRequest<MatrixErrorDTO>().body(
+                    createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Body not MatrixJoinRoomRequestDTO`)
                 ).status(400);
             }
 
@@ -725,7 +745,7 @@ export class HgHsBackendController {
             LOG.error(`ERROR: `, err);
             // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
-                createErrorDTO('Internal Server Error', 500)
+                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
         }
     }
@@ -774,7 +794,7 @@ export class HgHsBackendController {
             LOG.error(`ERROR: `, err);
             // @FIXME: Fix to use correct error DTO from Matrix Spec
             return ResponseEntity.internalServerError<{readonly error: string}>().body(
-                createErrorDTO('Internal Server Error', 500)
+                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
         }
     }

@@ -36,6 +36,16 @@ export const BUILD_BACKEND_URL : string  = /* @__PURE__ */parseNonEmptyString('%
 /**
  * @__PURE__
  */
+export const BUILD_BACKEND_HOSTNAME : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_BACKEND_HOSTNAME}') ?? 'localhost';
+
+/**
+ * @__PURE__
+ */
+export const BUILD_BACKEND_IO_SERVER : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_BACKEND_IO_SERVER}') ?? 'memory:';
+
+/**
+ * @__PURE__
+ */
 export const BUILD_COMMAND_NAME : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_COMMAND_NAME}') ?? 'nor-backend';
 
 /**
