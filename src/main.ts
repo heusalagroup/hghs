@@ -8,7 +8,7 @@ ProcessUtils.initEnvFromDefaultFiles();
 import {
     BACKEND_SCRIPT_NAME,
     BACKEND_LOG_LEVEL,
-    BACKEND_URL, BACKEND_HOSTNAME, BACKEND_IO_SERVER
+    BACKEND_URL, BACKEND_HOSTNAME, BACKEND_IO_SERVER, BACKEND_JWT_SECRET, BACKEND_JWT_ALG, BACKEND_DEFAULT_LANGUAGE, BACKEND_EMAIL_FROM, BACKEND_EMAIL_CONFIG, BACKEND_ACCESS_TOKEN_EXPIRATION_TIME, BACKEND_INITIAL_USERNAME, BACKEND_INITIAL_PASSWORD
 } from "./constants/runtime";
 
 import { LogService } from "./fi/hg/core/LogService";
@@ -27,7 +27,7 @@ import { Headers } from "./fi/hg/core/request/Headers";
 import { BUILD_USAGE_URL, BUILD_WITH_FULL_USAGE } from "./constants/build";
 import { MatrixServerService } from "./fi/hg/matrix/server/MatrixServerService";
 import { RepositoryType } from "./fi/hg/core/simpleRepository/types/RepositoryType";
-import { startsWith } from "./fi/hg/core/modules/lodash";
+import { parseInteger, startsWith } from "./fi/hg/core/modules/lodash";
 import { MatrixSharedClientService } from "./fi/hg/matrix/MatrixSharedClientService";
 import { MemorySharedClientService } from "./fi/hg/core/simpleRepository/MemorySharedClientService";
 import { isStoredDeviceRepositoryItem, StoredDeviceRepositoryItem } from "./fi/hg/matrix/server/types/repository/device/StoredDeviceRepositoryItem";
@@ -42,6 +42,12 @@ import { RoomRepositoryService } from "./fi/hg/matrix/server/types/repository/ro
 import { isStoredRoomRepositoryItem, StoredRoomRepositoryItem } from "./fi/hg/matrix/server/types/repository/room/StoredRoomRepositoryItem";
 import { isStoredEventRepositoryItem, StoredEventRepositoryItem } from "./fi/hg/matrix/server/types/repository/event/StoredEventRepositoryItem";
 import { EventRepositoryService } from "./fi/hg/matrix/server/types/repository/event/EventRepositoryService";
+import { EmailTokenService } from "./fi/hg/backend/EmailTokenService";
+import { JwtService } from "./fi/hg/backend/JwtService";
+import { BackendTranslationService } from "./fi/hg/backend/BackendTranslationService";
+import { Language, parseLanguage } from "./fi/hg/core/types/Language";
+import { TRANSLATIONS } from "./fi/hg/core/translations";
+import { EmailService } from "./fi/hg/backend/EmailService";
 
 const LOG = LogService.createLogger('main');
 
@@ -69,6 +75,13 @@ export async function main (
             console.error(`ERROR: ${errorString}`);
             return exitStatus;
         }
+
+        const jwtService = new JwtService();
+        const jwtEngine = jwtService.createJwtEngine(BACKEND_JWT_SECRET, BACKEND_JWT_ALG);
+
+        const emailService = new EmailService(BACKEND_EMAIL_FROM);
+
+        const defaultLanguage : Language = parseLanguage(BACKEND_DEFAULT_LANGUAGE) ?? Language.ENGLISH;
 
         const repositoryType : RepositoryType = startsWith(BACKEND_IO_SERVER, 'memory:') ? RepositoryType.MEMORY : RepositoryType.MATRIX;
 
@@ -120,8 +133,16 @@ export async function main (
             deviceRepositoryService,
             userRepositoryService,
             roomRepositoryService,
-            eventRepositoryService
+            eventRepositoryService,
+            jwtEngine,
+            parseInteger(BACKEND_ACCESS_TOKEN_EXPIRATION_TIME)
         );
+
+        // Start initializing
+
+        await BackendTranslationService.initialize(defaultLanguage, TRANSLATIONS);
+
+        emailService.initialize(BACKEND_EMAIL_CONFIG);
 
         // Initialize repositories
         if (repositoryType === RepositoryType.MATRIX) {
@@ -135,6 +156,21 @@ export async function main (
         await eventRepositoryService.initialize();
 
         await matrixServer.initialize();
+
+        if ( BACKEND_INITIAL_USERNAME && BACKEND_INITIAL_PASSWORD ) {
+            LOG.debug(`Creating initial user: "${BACKEND_INITIAL_USERNAME}"`);
+            const user = await matrixServer.createUser(
+                BACKEND_INITIAL_USERNAME,
+                BACKEND_INITIAL_PASSWORD
+            );
+            LOG.info(`Created initial user: "${BACKEND_INITIAL_USERNAME}" with ID "${user.id}"`);
+        } else {
+            if (!BACKEND_INITIAL_USERNAME) {
+                LOG.debug(`No initial username defined. Will not create user.`);
+            } else if (!BACKEND_INITIAL_PASSWORD) {
+                LOG.debug(`No initial password defined. Will not create user.`);
+            }
+        }
 
         HsBackendController.setMatrixServer(matrixServer);
 

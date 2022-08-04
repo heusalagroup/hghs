@@ -5,7 +5,10 @@ services:
     build: .
     environment:
       BACKEND_LOG_LEVEL: DEBUG
-      BACKEND_URL: "http://0.0.0.0:3500"
+      BACKEND_URL: "http://0.0.0.0:8008"
+      BACKEND_INITIAL_USERNAME: "$BACKEND_INITIAL_USERNAME"
+      BACKEND_INITIAL_PASSWORD: "$BACKEND_INITIAL_PASSWORD"
+      BACKEND_JWT_SECRET: "$BACKEND_JWT_SECRET"
 
     ports:
-    - "3500:3500"
+    - "8008:8008"

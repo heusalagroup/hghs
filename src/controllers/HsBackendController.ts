@@ -39,6 +39,7 @@ import { MatrixServerService } from "../fi/hg/matrix/server/MatrixServerService"
 import { MatrixLoginType } from "../fi/hg/matrix/types/request/login/MatrixLoginType";
 import { createMatrixErrorDTO, MatrixErrorDTO } from "../fi/hg/matrix/types/response/error/MatrixErrorDTO";
 import { MatrixErrorCode } from "../fi/hg/matrix/types/response/error/types/MatrixErrorCode";
+import { MatrixType } from "../fi/hg/matrix/types/core/MatrixType";
 
 const LOG = LogService.createLogger('HsBackendController');
 
@@ -203,17 +204,23 @@ export class HsBackendController {
             if (!isMatrixLoginRequestDTO(body)) {
                 // @FIXME: Fix to use correct error DTO from Matrix Spec
                 return ResponseEntity.badRequest<MatrixErrorDTO>().body(
-                    createMatrixErrorDTO(MatrixErrorCode.M_FORBIDDEN, `Body not AuthenticateEmailDTO`)
+                    createMatrixErrorDTO(MatrixErrorCode.M_FORBIDDEN, `Body not MatrixLoginRequestDTO`)
                 ).status(400);
             }
 
             if (body?.type !== MatrixLoginType.M_LOGIN_PASSWORD) {
                 return ResponseEntity.badRequest<MatrixErrorDTO>().body(
-                    createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Only type M_LOGIN_PASSWORD supported`)
+                    createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Only type ${MatrixLoginType.M_LOGIN_PASSWORD} supported`)
                 ).status(400);
             }
 
-            const user = body?.user;
+            if ( body?.identifier && body?.identifier?.type !== MatrixType.M_ID_USER ) {
+                return ResponseEntity.badRequest<MatrixErrorDTO>().body(
+                    createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Only identifier type ${MatrixType.M_ID_USER} supported`)
+                ).status(400);
+            }
+
+            const user = body?.user ?? body?.identifier?.user;
             const password = body?.password;
 
             if ( !user || !password ) {
@@ -224,8 +231,7 @@ export class HsBackendController {
 
             const deviceId = body?.device_id;
 
-            const accessToken = await this._matrixServer.loginWithPassword(deviceId, user, password);
-
+            const accessToken = await this._matrixServer.loginWithPassword(user, password, deviceId);
             if (!accessToken) {
                 return ResponseEntity.badRequest<MatrixErrorDTO>().body(
                     createMatrixErrorDTO(MatrixErrorCode.M_FORBIDDEN, `Access denied`)

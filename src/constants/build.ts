@@ -46,6 +46,21 @@ export const BUILD_BACKEND_IO_SERVER : string  = /* @__PURE__ */parseNonEmptyStr
 /**
  * @__PURE__
  */
+export const BUILD_JWT_SECRET : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_JWT_SECRET}') ?? '';
+
+/**
+ * @__PURE__
+ */
+export const BUILD_JWT_ALG : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_JWT_ALG}') ?? 'HS256';
+
+/**
+ * @__PURE__
+ */
+export const BUILD_DEFAULT_LANGUAGE : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_DEFAULT_LANGUAGE}') ?? 'en';
+
+/**
+ * @__PURE__
+ */
 export const BUILD_COMMAND_NAME : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_COMMAND_NAME}') ?? 'nor-backend';
 
 /**
@@ -82,3 +97,19 @@ export const IS_TEST        : boolean = BUILD_NODE_ENV === 'test';
  * @__PURE__
  */
 export const IS_DEVELOPMENT : boolean = !IS_PRODUCTION && !IS_TEST;
+
+/**
+ * @__PURE__
+ */
+export const BUILD_EMAIL_FROM : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_EMAIL_FROM}') ?? 'Procure Node <info@procurenode.app>';
+
+/**
+ * @__PURE__
+ */
+export const BUILD_EMAIL_CONFIG : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_EMAIL_CONFIG}') ?? 'smtp://localhost:25';
+
+/**
+ * Minutes
+ * @__PURE__
+ */
+export const BUILD_ACCESS_TOKEN_EXPIRATION_TIME : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_ACCESS_TOKEN_EXPIRATION_TIME}') ?? '3600';
