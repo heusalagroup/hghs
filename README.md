@@ -15,6 +15,19 @@ clients.
 See [@heusalagroup/hshs-test](https://github.com/heusalagroup/hghs-test) for our 
 system tests.
 
+### Start Docker environment
+
+This is the easiest way to run the backend.
+
+```
+docker-compose build
+docker-compose up
+```
+
+Once running, services will be available:
+
+ * http://localhost:8008 -- HgHS Matrix.org Server
+
 ### Start the server in development mode
 
 FIXME: This isn't working right now. Use production mode.
@@ -35,4 +48,4 @@ npm run build
 npm run start-prod
 ```
 
-...and open http://0.0.0.0:3000
+...and use `http://0.0.0.0:8008`
