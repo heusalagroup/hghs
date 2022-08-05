@@ -13,8 +13,8 @@ It compiles as a single standalone JavaScript file. The only runtime dependency
 is NodeJS. 
 
 Our software is designed for scalable and fully managed serverless cloud 
-environments, e.g. the software must spin up fast, can run concurrently, and can 
-be deployed without a downtime.
+environments, e.g. where the software must spin up fast, can run concurrently, 
+and can be deployed without a downtime.
 
 Another intended use case for `hghs` is embedded devices (e.g. OpenWRT), for 
 example.
