@@ -47,12 +47,15 @@ docker-compose build
 ### Start Docker environment
 
 ```
+export BACKEND_JWT_SECRET='secretJwtString123'
+export BACKEND_INITIAL_USERNAME='app'
+export BACKEND_INITIAL_PASSWORD='p4sSw0rd123'
 docker-compose up
 ```
 
 Once running, services will be available:
 
- * http://localhost:8008 -- HgHS Matrix.org Server
+ * http://localhost:8008 -- `hghs` Matrix.org Server
 
 ### Start the server in development mode
 
