@@ -3,12 +3,25 @@
 *HG HomeServer* will be a zero dep [Matrix.org](https://matrix.org) HomeServer 
 written in pure TypeScript.
 
-It compiles as a single standalone JavaScript file. The only runtime dependency 
-is NodeJS. We plan to support embedded devices (e.g. OpenWRT), for example.
+It's intended for special use cases when Matrix protocol is used as a backbone 
+for custom apps like software using our 
+[MatrixCrudRepository](https://github.com/heusalagroup/fi.hg.matrix/blob/main/MatrixCrudRepository.ts). 
+It's lightweight, minimal and for the moment isn't even planned to 
+support full Matrix spec. We might make it run on browser later.
 
-It will only support [a subset of Matrix.org protocol](https://github.com/heusalagroup/hghs/issues/16) that our 
-software is using. However, we're happy to add more features for commercial 
-clients. 
+It compiles as a single standalone JavaScript file. The only runtime dependency 
+is NodeJS. 
+
+Our software is designed for scalable and fully managed serverless cloud 
+environments, e.g. the software must spin up fast, can run concurrently, and can 
+be deployed without a downtime.
+
+Another intended use case for `hghs` is embedded devices (e.g. OpenWRT), for 
+example.
+
+It will only support [a subset of Matrix.org protocol](https://github.com/heusalagroup/hghs/issues/16) 
+that our software is using. However, we're happy to add more features for 
+commercial clients. 
 
 ### Test driven development
 
