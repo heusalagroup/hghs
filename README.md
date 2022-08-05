@@ -6,7 +6,7 @@ written in pure TypeScript.
 It's intended for special use cases when Matrix protocol is used as a backbone 
 for custom apps. For example, we use our 
 [MatrixCrudRepository](https://github.com/heusalagroup/fi.hg.matrix/blob/main/MatrixCrudRepository.ts) 
-as a persistant data store for our software. It's lightweight, minimal and for the moment isn't even planned to 
+as a persistent data store for our software. It's lightweight, minimal and for the moment isn't even planned to 
 support full Matrix spec. We might make it run on browser later.
 
 It compiles as a single standalone JavaScript file. The only runtime dependency 
