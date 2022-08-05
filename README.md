@@ -48,8 +48,7 @@ docker-compose build
 
 ```
 export BACKEND_JWT_SECRET='secretJwtString123'
-export BACKEND_INITIAL_USERNAME='app'
-export BACKEND_INITIAL_PASSWORD='p4sSw0rd123'
+export BACKEND_INITIAL_USERS='app:p4sSw0rd123'
 docker-compose up
 ```
 

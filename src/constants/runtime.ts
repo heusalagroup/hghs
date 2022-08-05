@@ -23,11 +23,10 @@ export const BACKEND_HOSTNAME        : string   = parseNonEmptyString(process?.e
 export const BACKEND_IO_SERVER       : string   = parseNonEmptyString(process?.env?.BACKEND_IO_SERVER)       ?? BUILD_BACKEND_IO_SERVER;
 export const BACKEND_JWT_SECRET      : string   = parseNonEmptyString(process?.env?.BACKEND_JWT_SECRET)      ?? BUILD_JWT_SECRET;
 export const BACKEND_JWT_ALG         : string   = parseNonEmptyString(process?.env?.BACKEND_JWT_ALG)         ?? BUILD_JWT_ALG;
-export const BACKEND_DEFAULT_LANGUAGE         : string   = parseNonEmptyString(process?.env?.BACKEND_DEFAULT_LANGUAGE) ?? BUILD_DEFAULT_LANGUAGE;
+export const BACKEND_DEFAULT_LANGUAGE : string  = parseNonEmptyString(process?.env?.BACKEND_DEFAULT_LANGUAGE) ?? BUILD_DEFAULT_LANGUAGE;
 export const BACKEND_EMAIL_CONFIG    : string   = parseNonEmptyString(process?.env?.BACKEND_EMAIL_CONFIG)    ?? BUILD_EMAIL_CONFIG;
 export const BACKEND_EMAIL_FROM      : string   = parseNonEmptyString(process?.env?.BACKEND_EMAIL_FROM)      ?? BUILD_EMAIL_FROM;
-export const BACKEND_INITIAL_USERNAME : string | undefined  = parseNonEmptyString(process?.env?.BACKEND_INITIAL_USERNAME);
-export const BACKEND_INITIAL_PASSWORD : string | undefined  = parseNonEmptyString(process?.env?.BACKEND_INITIAL_PASSWORD);
+export const BACKEND_INITIAL_USERS   : string | undefined  = parseNonEmptyString(process?.env?.BACKEND_INITIAL_USERS);
 
 /**
  * Expiration time in minutes

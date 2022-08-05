@@ -8,7 +8,16 @@ ProcessUtils.initEnvFromDefaultFiles();
 import {
     BACKEND_SCRIPT_NAME,
     BACKEND_LOG_LEVEL,
-    BACKEND_URL, BACKEND_HOSTNAME, BACKEND_IO_SERVER, BACKEND_JWT_SECRET, BACKEND_JWT_ALG, BACKEND_DEFAULT_LANGUAGE, BACKEND_EMAIL_FROM, BACKEND_EMAIL_CONFIG, BACKEND_ACCESS_TOKEN_EXPIRATION_TIME, BACKEND_INITIAL_USERNAME, BACKEND_INITIAL_PASSWORD
+    BACKEND_URL,
+    BACKEND_HOSTNAME,
+    BACKEND_IO_SERVER,
+    BACKEND_JWT_SECRET,
+    BACKEND_JWT_ALG,
+    BACKEND_DEFAULT_LANGUAGE,
+    BACKEND_EMAIL_FROM,
+    BACKEND_EMAIL_CONFIG,
+    BACKEND_ACCESS_TOKEN_EXPIRATION_TIME,
+    BACKEND_INITIAL_USERS
 } from "./constants/runtime";
 
 import { LogService } from "./fi/hg/core/LogService";
@@ -42,7 +51,6 @@ import { RoomRepositoryService } from "./fi/hg/matrix/server/types/repository/ro
 import { isStoredRoomRepositoryItem, StoredRoomRepositoryItem } from "./fi/hg/matrix/server/types/repository/room/StoredRoomRepositoryItem";
 import { isStoredEventRepositoryItem, StoredEventRepositoryItem } from "./fi/hg/matrix/server/types/repository/event/StoredEventRepositoryItem";
 import { EventRepositoryService } from "./fi/hg/matrix/server/types/repository/event/EventRepositoryService";
-import { EmailTokenService } from "./fi/hg/backend/EmailTokenService";
 import { JwtService } from "./fi/hg/backend/JwtService";
 import { BackendTranslationService } from "./fi/hg/backend/BackendTranslationService";
 import { Language, parseLanguage } from "./fi/hg/core/types/Language";
@@ -157,19 +165,25 @@ export async function main (
 
         await matrixServer.initialize();
 
-        if ( BACKEND_INITIAL_USERNAME && BACKEND_INITIAL_PASSWORD ) {
-            LOG.debug(`Creating initial user: "${BACKEND_INITIAL_USERNAME}"`);
-            const user = await matrixServer.createUser(
-                BACKEND_INITIAL_USERNAME,
-                BACKEND_INITIAL_PASSWORD
-            );
-            LOG.info(`Created initial user: "${BACKEND_INITIAL_USERNAME}" with ID "${user.id}"`);
-        } else {
-            if (!BACKEND_INITIAL_USERNAME) {
-                LOG.debug(`No initial username defined. Will not create user.`);
-            } else if (!BACKEND_INITIAL_PASSWORD) {
-                LOG.debug(`No initial password defined. Will not create user.`);
+        if ( BACKEND_INITIAL_USERS ) {
+            const users = BACKEND_INITIAL_USERS.split(';');
+            LOG.debug(`Creating initial users from "${BACKEND_INITIAL_USERS}": `, users);
+            let i = 0;
+            for (; i<users.length; i+=1) {
+                const parts = users[i].split(':');
+                const username = parts.shift();
+                const password = parts.join(':');
+                if (username && password) {
+                    LOG.debug(`Creating initial user: "${username}"`);
+                    const user = await matrixServer.createUser(
+                        username,
+                        password
+                    );
+                    LOG.info(`Created initial user: "${username}" as ID "${user.id}"`);
+                }
             }
+        } else {
+            LOG.debug(`No initial users defined. Will not create users.`);
         }
 
         HsBackendController.setMatrixServer(matrixServer);
