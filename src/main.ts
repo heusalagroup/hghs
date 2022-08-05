@@ -56,6 +56,7 @@ import { BackendTranslationService } from "./fi/hg/backend/BackendTranslationSer
 import { Language, parseLanguage } from "./fi/hg/core/types/Language";
 import { TRANSLATIONS } from "./fi/hg/core/translations";
 import { EmailService } from "./fi/hg/backend/EmailService";
+import { StaticRoutes } from "./fi/hg/core/requestServer/types/StaticRoutes";
 
 const LOG = LogService.createLogger('main');
 
@@ -69,6 +70,7 @@ export async function main (
         RequestRouter.setLogLevel(LogLevel.INFO);
         RequestClient.setLogLevel(LogLevel.INFO);
         RequestServer.setLogLevel(LogLevel.INFO);
+        StaticRoutes.setLogLevel(LogLevel.INFO);
 
         LOG.debug(`Loglevel as ${LogService.getLogLevelString()}`);
 
