@@ -15,12 +15,25 @@ clients.
 See [@heusalagroup/hshs-test](https://github.com/heusalagroup/hghs-test) for our 
 system tests.
 
-### Start Docker environment
+### Fetching source code
 
-This is the easiest way to run the backend.
+```bash
+git clone git@github.com:hangovergames/hghs.git hghs
+cd hghs
+git submodule update --init --recursive
+```
+
+### Build docker containers
+
+This is the easiest way to use the backend.
 
 ```
 docker-compose build
+```
+
+### Start Docker environment
+
+```
 docker-compose up
 ```
 
