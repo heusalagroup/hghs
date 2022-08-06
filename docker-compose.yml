@@ -1,13 +1,19 @@
 version: '3.1'
 
 services:
+
   hghs-backend:
+    container_name: hghs-backend
+    hostname: hghs-backend
+    restart: always
     build: .
     environment:
+      PORT: "8008"
       BACKEND_LOG_LEVEL: "DEBUG"
       BACKEND_URL: "http://0.0.0.0:8008"
+      BACKEND_PUBLIC_URL: "http://localhost:8008"
       BACKEND_INITIAL_USERS: "$BACKEND_INITIAL_USERS"
+      BACKEND_EMAIL_CONFIG: "smtp://hghs-test-smtp:1025"
       BACKEND_JWT_SECRET: "$BACKEND_JWT_SECRET"
-
     ports:
     - "8008:8008"

@@ -31,7 +31,7 @@ export const BUILD_VERSION : string  = /* @__PURE__ */parseNonEmptyString('%{BUI
 /**
  * @__PURE__
  */
-export const BUILD_BACKEND_URL : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_BACKEND_URL}') ?? 'http://0.0.0.0:3000';
+export const BUILD_BACKEND_URL : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_BACKEND_URL}') ?? `http://0.0.0.0:3000`;
 
 /**
  * @__PURE__
@@ -113,3 +113,8 @@ export const BUILD_EMAIL_CONFIG : string  = /* @__PURE__ */parseNonEmptyString('
  * @__PURE__
  */
 export const BUILD_ACCESS_TOKEN_EXPIRATION_TIME : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_ACCESS_TOKEN_EXPIRATION_TIME}') ?? '3600';
+
+/**
+ * @__PURE__
+ */
+export const BUILD_BACKEND_PUBLIC_URL : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_BACKEND_PUBLIC_URL}') ?? 'http://localhost:3000';

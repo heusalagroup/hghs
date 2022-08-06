@@ -51,6 +51,7 @@ import { MatrixErrorCode } from "../fi/hg/matrix/types/response/error/types/Matr
 import { MatrixType } from "../fi/hg/matrix/types/core/MatrixType";
 import { AuthorizationUtils } from "../fi/hg/core/AuthorizationUtils";
 import { LogLevel } from "../fi/hg/core/types/LogLevel";
+import { MatrixUtils } from "../fi/hg/matrix/MatrixUtils";
 
 const LOG = LogService.createLogger('HsBackendController');
 
@@ -237,16 +238,17 @@ export class HsBackendController {
             }
 
             const backendHostname = this._matrixServer.getHostName();
+            const backendUrl = this._matrixServer.getURL();
 
             // @FIXME: Implement https://github.com/heusalagroup/hghs/issues/3
             const responseDto : MatrixLoginResponseDTO = createMatrixLoginResponseDTO(
-                user,
+                MatrixUtils.getUserId(user, backendHostname),
                 accessToken,
-                backendHostname,
+                backendUrl,
                 deviceId,
                 createMatrixDiscoveryInformationDTO(
-                    createMatrixHomeServerDTO(backendHostname),
-                    createMatrixIdentityServerInformationDTO(backendHostname)
+                    createMatrixHomeServerDTO(backendUrl),
+                    createMatrixIdentityServerInformationDTO(backendUrl)
                 )
             );
 

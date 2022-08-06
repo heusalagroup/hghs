@@ -17,7 +17,7 @@ import {
     BACKEND_EMAIL_FROM,
     BACKEND_EMAIL_CONFIG,
     BACKEND_ACCESS_TOKEN_EXPIRATION_TIME,
-    BACKEND_INITIAL_USERS
+    BACKEND_INITIAL_USERS, BACKEND_PUBLIC_URL
 } from "./constants/runtime";
 import {
     BUILD_USAGE_URL,
@@ -156,6 +156,7 @@ export async function main (
         );
 
         const matrixServer : MatrixServerService = new MatrixServerService(
+            BACKEND_PUBLIC_URL,
             BACKEND_HOSTNAME,
             deviceRepositoryService,
             userRepositoryService,
