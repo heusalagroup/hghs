@@ -48,29 +48,32 @@ import { RequestClient } from "./fi/hg/core/RequestClient";
 import { CommandArgumentUtils } from "./fi/hg/core/cmd/utils/CommandArgumentUtils";
 import { ParsedCommandArgumentStatus } from "./fi/hg/core/cmd/types/ParsedCommandArgumentStatus";
 import { RequestServer } from "./fi/hg/core/RequestServer";
-import { HsBackendController } from "./controllers/HsBackendController";
 import { RequestRouter } from "./fi/hg/core/requestServer/RequestRouter";
-import { MatrixServerService } from "./fi/hg/matrix/server/MatrixServerService";
 import { RepositoryType } from "./fi/hg/core/simpleRepository/types/RepositoryType";
 import { parseInteger, startsWith } from "./fi/hg/core/modules/lodash";
-import { MatrixSharedClientService } from "./fi/hg/matrix/MatrixSharedClientService";
 import { MemorySharedClientService } from "./fi/hg/core/simpleRepository/MemorySharedClientService";
+import { StoredRepositoryItem, StoredRepositoryItemTestCallback } from "./fi/hg/core/simpleRepository/types/StoredRepositoryItem";
+import { MemoryRepositoryInitializer } from "./fi/hg/core/simpleRepository/MemoryRepositoryInitializer";
+import { Language, parseLanguage } from "./fi/hg/core/types/Language";
+import { StaticRoutes } from "./fi/hg/core/requestServer/types/StaticRoutes";
+
+import { BackendTranslationService } from "./fi/hg/backend/BackendTranslationService";
+import { JwtService } from "./fi/hg/backend/JwtService";
+import { EmailService } from "./fi/hg/backend/EmailService";
+
+import { MatrixServerService } from "./fi/hg/matrix/server/MatrixServerService";
+import { MatrixSharedClientService } from "./fi/hg/matrix/MatrixSharedClientService";
 import { isStoredDeviceRepositoryItem, StoredDeviceRepositoryItem } from "./fi/hg/matrix/server/types/repository/device/StoredDeviceRepositoryItem";
 import { DeviceRepositoryService } from "./fi/hg/matrix/server/types/repository/device/DeviceRepositoryService";
-import { StoredRepositoryItem, StoredRepositoryItemTestCallback } from "./fi/hg/core/simpleRepository/types/StoredRepositoryItem";
 import { MatrixRepositoryInitializer } from "./fi/hg/matrix/MatrixRepositoryInitializer";
-import { MemoryRepositoryInitializer } from "./fi/hg/core/simpleRepository/MemoryRepositoryInitializer";
 import { isStoredUserRepositoryItem, StoredUserRepositoryItem } from "./fi/hg/matrix/server/types/repository/user/StoredUserRepositoryItem";
 import { UserRepositoryService } from "./fi/hg/matrix/server/types/repository/user/UserRepositoryService";
 import { RoomRepositoryService } from "./fi/hg/matrix/server/types/repository/room/RoomRepositoryService";
 import { isStoredRoomRepositoryItem, StoredRoomRepositoryItem } from "./fi/hg/matrix/server/types/repository/room/StoredRoomRepositoryItem";
 import { isStoredEventRepositoryItem, StoredEventRepositoryItem } from "./fi/hg/matrix/server/types/repository/event/StoredEventRepositoryItem";
 import { EventRepositoryService } from "./fi/hg/matrix/server/types/repository/event/EventRepositoryService";
-import { JwtService } from "./fi/hg/backend/JwtService";
-import { BackendTranslationService } from "./fi/hg/backend/BackendTranslationService";
-import { Language, parseLanguage } from "./fi/hg/core/types/Language";
-import { EmailService } from "./fi/hg/backend/EmailService";
-import { StaticRoutes } from "./fi/hg/core/requestServer/types/StaticRoutes";
+
+import { HsBackendController } from "./controllers/HsBackendController";
 
 const LOG = LogService.createLogger('main');
 
@@ -84,6 +87,7 @@ export async function main (
         RequestClient.setLogLevel(LogLevel.INFO);
         RequestServer.setLogLevel(LogLevel.INFO);
         StaticRoutes.setLogLevel(LogLevel.INFO);
+        HsBackendController.setLogLevel(LogLevel.DEBUG);
 
         LOG.debug(`Loglevel as ${LogService.getLogLevelString()}`);
 

@@ -50,6 +50,7 @@ import { createMatrixErrorDTO, isMatrixErrorDTO, MatrixErrorDTO } from "../fi/hg
 import { MatrixErrorCode } from "../fi/hg/matrix/types/response/error/types/MatrixErrorCode";
 import { MatrixType } from "../fi/hg/matrix/types/core/MatrixType";
 import { AuthorizationUtils } from "../fi/hg/core/AuthorizationUtils";
+import { LogLevel } from "../fi/hg/core/types/LogLevel";
 
 const LOG = LogService.createLogger('HsBackendController');
 
@@ -57,6 +58,10 @@ const LOG = LogService.createLogger('HsBackendController');
 export class HsBackendController {
 
     private static _matrixServer : MatrixServerService | undefined;
+
+    public static setLogLevel (level: LogLevel) {
+        LOG.setLogLevel(level);
+    }
 
     public static setMatrixServer (value: MatrixServerService) {
         this._matrixServer = value;
@@ -71,13 +76,11 @@ export class HsBackendController {
             token: string
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
-
             return ResponseEntity.ok(
                 {
                     hello: 'world'
                 } as unknown as ReadonlyJsonObject
             );
-
         } catch (err) {
             LOG.error(`ERROR: `, err);
             return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
@@ -99,13 +102,9 @@ export class HsBackendController {
             token: string
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
-
             const nonce = await this._matrixServer.createAdminRegisterNonce();
-
             const response = createSynapsePreRegisterResponseDTO( nonce );
-
             return ResponseEntity.ok( response as unknown as ReadonlyJsonObject );
-
         } catch (err) {
             LOG.error(`ERROR: `, err);
             return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
@@ -131,13 +130,11 @@ export class HsBackendController {
             body: ReadonlyJsonObject
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
-
             if ( !isSynapseRegisterRequestDTO(body) ) {
                 return ResponseEntity.badRequest<MatrixErrorDTO>().body(
                     createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Body not AuthenticateEmailDTO`)
                 ).status(400);
             }
-
             // @FIXME: Implement the end point
             const response : SynapseRegisterResponseDTO = createSynapseRegisterResponseDTO(
                 'access_token',
@@ -145,9 +142,7 @@ export class HsBackendController {
                 'home_server',
                 'device_id'
             );
-
             return ResponseEntity.ok( response as unknown as ReadonlyJsonObject );
-
         } catch (err) {
             LOG.error(`ERROR: `, err);
             return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
@@ -177,7 +172,7 @@ export class HsBackendController {
             LOG.debug(`accountWhoAmI: response = `, dto);
             return ResponseEntity.ok( dto as unknown as ReadonlyJsonObject );
         } catch (err) {
-            LOG.error(`ERROR: `, err);
+            LOG.error(`accountWhoAmI: ERROR: `, err);
             if (isMatrixErrorDTO(err)) {
                 return ResponseEntity.badRequest<MatrixErrorDTO>().body(err).status(401);
             }
@@ -282,18 +277,14 @@ export class HsBackendController {
             roomAlias = ""
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
-
-            LOG.debug(`roomAlias = `, roomAlias);
-
+            LOG.debug(`getDirectoryRoomByName: roomAlias = `, roomAlias);
             const response : GetDirectoryRoomAliasResponseDTO = createGetDirectoryRoomAliasResponseDTO(
                 'room_id',
                 ['server1']
             );
-
             return ResponseEntity.ok(
                 response as unknown as ReadonlyJsonObject
             );
-
         } catch (err) {
             LOG.error(`ERROR: `, err);
             return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
@@ -320,7 +311,7 @@ export class HsBackendController {
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
 
-            LOG.debug(`roomId = `, roomId);
+            LOG.debug(`getRoomJoinedMembers: roomId = `, roomId);
 
             const responseDto : MatrixRoomJoinedMembersDTO = createMatrixRoomJoinedMembersDTO(
                 {
@@ -333,7 +324,7 @@ export class HsBackendController {
             );
 
         } catch (err) {
-            LOG.error(`ERROR: `, err);
+            LOG.error(`getRoomJoinedMembers: ERROR: `, err);
             return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
                 createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
@@ -362,7 +353,7 @@ export class HsBackendController {
         try {
 
             const kind : string | undefined = parseMatrixRegisterKind(kindString);
-            LOG.debug(`kind = `, kind);
+            LOG.debug(`registerUser: kind = `, kind);
 
             if (!isMatrixMatrixRegisterRequestDTO(body)) {
                 return ResponseEntity.badRequest<MatrixErrorDTO>().body(
@@ -383,7 +374,7 @@ export class HsBackendController {
             );
 
         } catch (err) {
-            LOG.error(`ERROR: `, err);
+            LOG.error(`registerUser: ERROR: `, err);
             return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
                 createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
@@ -414,7 +405,7 @@ export class HsBackendController {
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
 
-            LOG.debug(`roomId = `, roomId, eventType, stateKey);
+            LOG.debug(`getRoomStateByType: roomId = `, roomId, eventType, stateKey);
 
             const responseDto = createGetRoomStateByTypeResponseDTO('roomName');
 
@@ -423,7 +414,7 @@ export class HsBackendController {
             );
 
         } catch (err) {
-            LOG.error(`ERROR: `, err);
+            LOG.error(`getRoomStateByType: ERROR: `, err);
             return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
                 createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
@@ -457,7 +448,7 @@ export class HsBackendController {
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
 
-            LOG.debug(`set: roomId = `, roomId, eventType, stateKey);
+            LOG.debug(`setRoomStateByType: roomId = `, roomId, eventType, stateKey);
 
             if (!isSetRoomStateByTypeRequestDTO(body)) {
                 return ResponseEntity.badRequest<MatrixErrorDTO>().body(
@@ -475,7 +466,7 @@ export class HsBackendController {
             );
 
         } catch (err) {
-            LOG.error(`ERROR: `, err);
+            LOG.error(`setRoomStateByType: ERROR: `, err);
             return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
                 createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
@@ -499,16 +490,13 @@ export class HsBackendController {
         roomId = ""
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
-
-            LOG.debug(`set: roomId = `, roomId);
-
+            LOG.debug(`forgetRoom: roomId = `, roomId);
             // @FIXME: Implement https://github.com/heusalagroup/hghs/issues/9
             return ResponseEntity.ok(
                 {} as unknown as ReadonlyJsonObject
             );
-
         } catch (err) {
-            LOG.error(`ERROR: `, err);
+            LOG.error(`forgetRoom: ERROR: `, err);
             return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
                 createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
@@ -535,23 +523,18 @@ export class HsBackendController {
         body: ReadonlyJsonObject
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
-
             LOG.debug(`leaveRoom: roomId = `, roomId);
-
             if (!isMatrixLeaveRoomRequestDTO(body)) {
                 return ResponseEntity.badRequest<MatrixErrorDTO>().body(
                     createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Body not MatrixLeaveRoomRequestDTO`)
                 ).status(400);
             }
-
             const responseDto = createMatrixLeaveRoomResponseDTO();
-
             return ResponseEntity.ok(
                 responseDto as unknown as ReadonlyJsonObject
             );
-
         } catch (err) {
-            LOG.error(`ERROR: `, err);
+            LOG.error(`leaveRoom: ERROR: `, err);
             return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
                 createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
@@ -578,24 +561,19 @@ export class HsBackendController {
         body: ReadonlyJsonObject
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
-
             LOG.debug(`inviteToRoom: roomId = `, roomId);
-
             if (!isMatrixInviteToRoomRequestDTO(body)) {
                 return ResponseEntity.badRequest<MatrixErrorDTO>().body(
                     createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Body not MatrixInviteToRoomRequestDTO`)
                 ).status(400);
             }
-
             // FIXME: Implement https://github.com/heusalagroup/hghs/issues/11
             const responseDto = createMatrixInviteToRoomResponseDTO();
-
             return ResponseEntity.ok(
                 responseDto as unknown as ReadonlyJsonObject
             );
-
         } catch (err) {
-            LOG.error(`ERROR: `, err);
+            LOG.error(`inviteToRoom: ERROR: `, err);
             return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
                 createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
@@ -628,24 +606,19 @@ export class HsBackendController {
         body: ReadonlyJsonObject
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
-
             LOG.debug(`sendEventToRoomWithTnxId: roomId = `, roomId, eventName, tnxId);
-
             if (!isMatrixTextMessageDTO(body)) {
                 return ResponseEntity.badRequest<MatrixErrorDTO>().body(
                     createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Body not MatrixTextMessageDTO`)
                 ).status(400);
             }
-
             // TODO: Implement https://github.com/heusalagroup/hghs/issues/12
             const responseDto = createSendEventToRoomWithTnxIdResponseDTO('event_id');
-
             return ResponseEntity.ok(
                 responseDto as unknown as ReadonlyJsonObject
             );
-
         } catch (err) {
-            LOG.error(`ERROR: `, err);
+            LOG.error(`sendEventToRoomWithTnxId: ERROR: `, err);
             return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
                 createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
@@ -669,27 +642,22 @@ export class HsBackendController {
             body: ReadonlyJsonObject
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
-
             if (!isMatrixCreateRoomDTO(body)) {
                 return ResponseEntity.badRequest<MatrixErrorDTO>().body(
                     createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Body not MatrixCreateRoomDTO`)
                 ).status(400);
             }
-
             LOG.debug(`createRoom:`, body);
-
             // FIXME: Implement https://github.com/heusalagroup/hghs/issues/13
             const responseDto = createMatrixCreateRoomResponseDTO(
                 'room_id',
                 undefined
             );
-
             return ResponseEntity.ok(
                 responseDto as unknown as ReadonlyJsonObject
             );
-
         } catch (err) {
-            LOG.error(`ERROR: `, err);
+            LOG.error(`createRoom: ERROR: `, err);
             return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
                 createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
@@ -716,24 +684,19 @@ export class HsBackendController {
             body: ReadonlyJsonObject
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
-
             if (!isMatrixJoinRoomRequestDTO(body)) {
                 return ResponseEntity.badRequest<MatrixErrorDTO>().body(
                     createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Body not MatrixJoinRoomRequestDTO`)
                 ).status(400);
             }
-
             LOG.debug(`joinToRoom: `, body);
-
             // FIXME: Implement https://github.com/heusalagroup/hghs/issues/14
             const responseDto = createMatrixJoinRoomResponseDTO('room_id');
-
             return ResponseEntity.ok(
                 responseDto as unknown as ReadonlyJsonObject
             );
-
         } catch (err) {
-            LOG.error(`ERROR: `, err);
+            LOG.error(`joinToRoom: ERROR: `, err);
             return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
                 createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
@@ -769,19 +732,15 @@ export class HsBackendController {
             timeout = ""
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
-
             LOG.debug(`sync: `, filter, since, full_state, set_presence, timeout);
-
             const responseDto : MatrixSyncResponseDTO = createMatrixSyncResponseDTO(
                 'next_batch'
             );
-
             return ResponseEntity.ok(
                 responseDto as unknown as ReadonlyJsonObject
             );
-
         } catch (err) {
-            LOG.error(`ERROR: `, err);
+            LOG.error(`sync: ERROR: `, err);
             return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
                 createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
             );
