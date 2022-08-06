@@ -40,7 +40,7 @@ import { createMatrixInviteToRoomResponseDTO } from "../fi/hg/matrix/types/respo
 import { isMatrixTextMessageDTO } from "../fi/hg/matrix/types/message/textMessage/MatrixTextMessageDTO";
 import { createSendEventToRoomWithTnxIdResponseDTO } from "../fi/hg/matrix/types/response/sendEventToRoomWithTnxId/SendEventToRoomWithTnxIdResponseDTO";
 import { isMatrixCreateRoomDTO } from "../fi/hg/matrix/types/request/createRoom/MatrixCreateRoomDTO";
-import { createMatrixCreateRoomResponseDTO } from "../fi/hg/matrix/types/response/createRoom/MatrixCreateRoomResponseDTO";
+import { createMatrixCreateRoomResponseDTO, MatrixCreateRoomResponseDTO } from "../fi/hg/matrix/types/response/createRoom/MatrixCreateRoomResponseDTO";
 import { isMatrixJoinRoomRequestDTO } from "../fi/hg/matrix/types/request/joinRoom/MatrixJoinRoomRequestDTO";
 import { createMatrixJoinRoomResponseDTO } from "../fi/hg/matrix/types/response/joinRoom/MatrixJoinRoomResponseDTO";
 import { createMatrixSyncResponseDTO, MatrixSyncResponseDTO } from "../fi/hg/matrix/types/response/sync/MatrixSyncResponseDTO";
@@ -74,7 +74,7 @@ export class HsBackendController {
             required: false,
             defaultValue: ''
         })
-            token: string
+            accessHeader: string
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
             return ResponseEntity.ok(
@@ -91,7 +91,7 @@ export class HsBackendController {
     }
 
     /**
-     * @param token
+     * @param accessHeader
      * @see https://github.com/heusalagroup/hghs/issues/1
      */
     @GetMapping("/_synapse/admin/v1/register")
@@ -100,7 +100,7 @@ export class HsBackendController {
             required: false,
             defaultValue: ''
         })
-            token: string
+            accessHeader: string
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
             const nonce = await this._matrixServer.createAdminRegisterNonce();
@@ -116,7 +116,7 @@ export class HsBackendController {
 
     /**
      *
-     * @param token
+     * @param accessHeader
      * @param body
      * @see https://github.com/heusalagroup/hghs/issues/1
      */
@@ -126,7 +126,7 @@ export class HsBackendController {
             required: false,
             defaultValue: ''
         })
-            token: string,
+            accessHeader: string,
         @RequestBody
             body: ReadonlyJsonObject
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
@@ -185,7 +185,7 @@ export class HsBackendController {
 
     /**
      *
-     * @param token
+     * @param accessHeader
      * @param body
      * @see https://github.com/heusalagroup/hghs/issues/3
      */
@@ -195,7 +195,7 @@ export class HsBackendController {
             required: false,
             defaultValue: ''
         })
-            token: string,
+            accessHeader: string,
         @RequestBody
             body: ReadonlyJsonObject
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
@@ -264,7 +264,7 @@ export class HsBackendController {
 
     /**
      *
-     * @param token
+     * @param accessHeader
      * @param roomAlias
      * @see https://github.com/heusalagroup/hghs/issues/4
      */
@@ -274,7 +274,7 @@ export class HsBackendController {
             required: false,
             defaultValue: ''
         })
-            token: string,
+            accessHeader: string,
         @PathVariable('roomAlias', {required: true})
             roomAlias = ""
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
@@ -297,7 +297,7 @@ export class HsBackendController {
 
     /**
      *
-     * @param token
+     * @param accessHeader
      * @param roomId
      * @see https://github.com/heusalagroup/hghs/issues/5
      */
@@ -307,7 +307,7 @@ export class HsBackendController {
             required: false,
             defaultValue: ''
         })
-            token: string,
+            accessHeader: string,
         @PathVariable('roomId', {required: true})
             roomId = ""
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
@@ -335,7 +335,7 @@ export class HsBackendController {
 
     /**
      *
-     * @param token
+     * @param accessHeader
      * @param kindString
      * @param body
      * @see https://github.com/heusalagroup/hghs/issues/6
@@ -346,7 +346,7 @@ export class HsBackendController {
             required: false,
             defaultValue: ''
         })
-            token: string,
+            accessHeader: string,
         @RequestParam('kind', RequestParamValueType.STRING)
             kindString = "",
         @RequestBody
@@ -385,7 +385,7 @@ export class HsBackendController {
 
     /**
      *
-     * @param token
+     * @param accessHeader
      * @param roomId
      * @param eventType
      * @param stateKey
@@ -397,7 +397,7 @@ export class HsBackendController {
             required: false,
             defaultValue: ''
         })
-        token: string,
+        accessHeader: string,
         @PathVariable('roomId', {required: true})
         roomId = "",
         @PathVariable('eventType', {required: true})
@@ -425,7 +425,7 @@ export class HsBackendController {
 
     /**
      *
-     * @param token
+     * @param accessHeader
      * @param roomId
      * @param eventType
      * @param stateKey
@@ -438,7 +438,7 @@ export class HsBackendController {
             required: false,
             defaultValue: ''
         })
-        token: string,
+        accessHeader: string,
         @PathVariable('roomId', {required: true})
         roomId = "",
         @PathVariable('eventType', {required: true})
@@ -477,7 +477,7 @@ export class HsBackendController {
 
     /**
      *
-     * @param token
+     * @param accessHeader
      * @param roomId
      * @see https://github.com/heusalagroup/hghs/issues/9
      */
@@ -487,7 +487,7 @@ export class HsBackendController {
             required: false,
             defaultValue: ''
         })
-        token: string,
+        accessHeader: string,
         @PathVariable('roomId', {required: true})
         roomId = ""
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
@@ -507,7 +507,7 @@ export class HsBackendController {
 
     /**
      *
-     * @param token
+     * @param accessHeader
      * @param roomId
      * @param body
      * @see https://github.com/heusalagroup/hghs/issues/10
@@ -518,7 +518,7 @@ export class HsBackendController {
             required: false,
             defaultValue: ''
         })
-        token: string,
+        accessHeader: string,
         @PathVariable('roomId', {required: true})
         roomId = "",
         @RequestBody
@@ -545,7 +545,7 @@ export class HsBackendController {
 
     /**
      *
-     * @param token
+     * @param accessHeader
      * @param roomId
      * @param body
      * @see https://github.com/heusalagroup/hghs/issues/11
@@ -556,7 +556,7 @@ export class HsBackendController {
             required: false,
             defaultValue: ''
         })
-        token: string,
+        accessHeader: string,
         @PathVariable('roomId', {required: true})
         roomId = "",
         @RequestBody
@@ -584,7 +584,7 @@ export class HsBackendController {
 
     /**
      *
-     * @param token
+     * @param accessHeader
      * @param roomId
      * @param eventName
      * @param tnxId
@@ -597,7 +597,7 @@ export class HsBackendController {
             required: false,
             defaultValue: ''
         })
-        token: string,
+        accessHeader: string,
         @PathVariable('roomId', {required: true})
         roomId = "",
         @PathVariable('eventName', {required: true})
@@ -629,7 +629,7 @@ export class HsBackendController {
 
     /**
      *
-     * @param token
+     * @param accessHeader
      * @param body
      * @see https://github.com/heusalagroup/hghs/issues/13
      */
@@ -639,25 +639,29 @@ export class HsBackendController {
             required: false,
             defaultValue: ''
         })
-            token: string,
+            accessHeader: string,
         @RequestBody
             body: ReadonlyJsonObject
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
+
             if (!isMatrixCreateRoomDTO(body)) {
                 return ResponseEntity.badRequest<MatrixErrorDTO>().body(
                     createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Body not MatrixCreateRoomDTO`)
                 ).status(400);
             }
-            LOG.debug(`createRoom:`, body);
-            // FIXME: Implement https://github.com/heusalagroup/hghs/issues/13
-            const responseDto = createMatrixCreateRoomResponseDTO(
-                'room_id',
-                undefined
-            );
+
+            LOG.debug(`accountWhoAmI: accessHeader = `, accessHeader);
+            const accessToken = AuthorizationUtils.parseBearerToken(accessHeader);
+            LOG.debug(`accountWhoAmI: accessToken = `, accessToken);
+
+            LOG.debug(`createRoom: requestDto: `, body);
+            const responseDto : MatrixCreateRoomResponseDTO = await this._matrixServer.createRoom(accessToken, body);
+            LOG.debug(`createRoom: responseDto: `, body);
             return ResponseEntity.ok(
                 responseDto as unknown as ReadonlyJsonObject
             );
+
         } catch (err) {
             LOG.error(`createRoom: ERROR: `, err);
             return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
@@ -668,7 +672,7 @@ export class HsBackendController {
 
     /**
      *
-     * @param token
+     * @param accessHeader
      * @param roomId
      * @param body
      * @see https://github.com/heusalagroup/hghs/issues/14
@@ -679,7 +683,7 @@ export class HsBackendController {
             required: false,
             defaultValue: ''
         })
-            token: string,
+            accessHeader: string,
         @PathVariable('roomId', {required: true})
             roomId = "",
         @RequestBody
@@ -707,7 +711,7 @@ export class HsBackendController {
 
     /**
      *
-     * @param token
+     * @param accessHeader
      * @param filter
      * @param since
      * @param full_state
@@ -721,7 +725,7 @@ export class HsBackendController {
             required: false,
             defaultValue: ''
         })
-            token: string,
+            accessHeader: string,
         @RequestParam('filter', RequestParamValueType.STRING)
             filter = "",
         @RequestParam('since', RequestParamValueType.STRING)
