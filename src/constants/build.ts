@@ -21,7 +21,7 @@ function parseNonEmptyString (value : any) : string | undefined {
 /**
  * @__PURE__
  */
-export const BUILD_USAGE_URL = 'https://github.com/hangovergames';
+export const BUILD_USAGE_URL = 'https://github.com/heusalagroup';
 
 /**
  * @__PURE__
