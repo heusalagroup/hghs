@@ -19,11 +19,29 @@ import {
     BACKEND_ACCESS_TOKEN_EXPIRATION_TIME,
     BACKEND_INITIAL_USERS
 } from "./constants/runtime";
+import {
+    BUILD_USAGE_URL,
+    BUILD_WITH_FULL_USAGE
+} from "./constants/build";
+import {
+    IO_DEVICE_ROOM_TYPE,
+    IO_EVENT_ROOM_TYPE,
+    IO_ROOM_ROOM_TYPE,
+    IO_USER_ROOM_TYPE
+} from "./constants/io";
 
 import { LogService } from "./fi/hg/core/LogService";
 import { LogLevel } from "./fi/hg/core/types/LogLevel";
 
 LogService.setLogLevel(BACKEND_LOG_LEVEL);
+
+import { TRANSLATIONS } from "./fi/hg/core/translations";
+
+import { Request } from "./fi/hg/core/Request";
+Request.setLogLevel(LogLevel.INFO);
+
+import { Headers } from "./fi/hg/core/request/Headers";
+Headers.setLogLevel(LogLevel.INFO);
 
 import { CommandExitStatus } from "./fi/hg/core/cmd/types/CommandExitStatus";
 import { RequestClient } from "./fi/hg/core/RequestClient";
@@ -32,8 +50,6 @@ import { ParsedCommandArgumentStatus } from "./fi/hg/core/cmd/types/ParsedComman
 import { RequestServer } from "./fi/hg/core/RequestServer";
 import { HsBackendController } from "./controllers/HsBackendController";
 import { RequestRouter } from "./fi/hg/core/requestServer/RequestRouter";
-import { Headers } from "./fi/hg/core/request/Headers";
-import { BUILD_USAGE_URL, BUILD_WITH_FULL_USAGE } from "./constants/build";
 import { MatrixServerService } from "./fi/hg/matrix/server/MatrixServerService";
 import { RepositoryType } from "./fi/hg/core/simpleRepository/types/RepositoryType";
 import { parseInteger, startsWith } from "./fi/hg/core/modules/lodash";
@@ -41,7 +57,6 @@ import { MatrixSharedClientService } from "./fi/hg/matrix/MatrixSharedClientServ
 import { MemorySharedClientService } from "./fi/hg/core/simpleRepository/MemorySharedClientService";
 import { isStoredDeviceRepositoryItem, StoredDeviceRepositoryItem } from "./fi/hg/matrix/server/types/repository/device/StoredDeviceRepositoryItem";
 import { DeviceRepositoryService } from "./fi/hg/matrix/server/types/repository/device/DeviceRepositoryService";
-import { IO_DEVICE_ROOM_TYPE, IO_EVENT_ROOM_TYPE, IO_ROOM_ROOM_TYPE, IO_USER_ROOM_TYPE } from "./constants/io";
 import { StoredRepositoryItem, StoredRepositoryItemTestCallback } from "./fi/hg/core/simpleRepository/types/StoredRepositoryItem";
 import { MatrixRepositoryInitializer } from "./fi/hg/matrix/MatrixRepositoryInitializer";
 import { MemoryRepositoryInitializer } from "./fi/hg/core/simpleRepository/MemoryRepositoryInitializer";
@@ -54,7 +69,6 @@ import { EventRepositoryService } from "./fi/hg/matrix/server/types/repository/e
 import { JwtService } from "./fi/hg/backend/JwtService";
 import { BackendTranslationService } from "./fi/hg/backend/BackendTranslationService";
 import { Language, parseLanguage } from "./fi/hg/core/types/Language";
-import { TRANSLATIONS } from "./fi/hg/core/translations";
 import { EmailService } from "./fi/hg/backend/EmailService";
 import { StaticRoutes } from "./fi/hg/core/requestServer/types/StaticRoutes";
 
@@ -66,7 +80,6 @@ export async function main (
 
     try {
 
-        Headers.setLogLevel(LogLevel.INFO);
         RequestRouter.setLogLevel(LogLevel.INFO);
         RequestClient.setLogLevel(LogLevel.INFO);
         RequestServer.setLogLevel(LogLevel.INFO);
@@ -198,8 +211,8 @@ export async function main (
 
         const stopPromise = new Promise<void>((resolve, reject) => {
             try {
-                LOG.debug('Stopping server from RequestServer stop event');
                 serverListener = server.on(RequestServer.Event.STOPPED, () => {
+                    LOG.debug('Stopping server from RequestServer stop event');
                     serverListener = undefined;
                     resolve();
                 });
@@ -209,16 +222,12 @@ export async function main (
         });
 
         ProcessUtils.setupDestroyHandler( () => {
-
             LOG.debug('Stopping server from process utils event');
-
             server.stop();
-
             if (serverListener) {
                 serverListener();
                 serverListener = undefined;
             }
-
         }, (err : any) => {
             LOG.error('Error while shutting down the service: ', err);
         });

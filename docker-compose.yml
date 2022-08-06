@@ -4,7 +4,7 @@ services:
   hghs-backend:
     build: .
     environment:
-      BACKEND_LOG_LEVEL: DEBUG
+      BACKEND_LOG_LEVEL: "DEBUG"
       BACKEND_URL: "http://0.0.0.0:8008"
       BACKEND_INITIAL_USERS: "$BACKEND_INITIAL_USERS"
       BACKEND_JWT_SECRET: "$BACKEND_JWT_SECRET"
