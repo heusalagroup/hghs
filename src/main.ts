@@ -88,6 +88,7 @@ export async function main (
         RequestServer.setLogLevel(LogLevel.INFO);
         StaticRoutes.setLogLevel(LogLevel.INFO);
         HsBackendController.setLogLevel(LogLevel.DEBUG);
+        MatrixServerService.setLogLevel(LogLevel.DEBUG);
 
         LOG.debug(`Loglevel as ${LogService.getLogLevelString()}`);
 
