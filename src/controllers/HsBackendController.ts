@@ -39,7 +39,7 @@ import { isMatrixInviteToRoomRequestDTO } from "../fi/hg/matrix/types/request/in
 import { createMatrixInviteToRoomResponseDTO } from "../fi/hg/matrix/types/response/inviteToRoom/MatrixInviteToRoomResponseDTO";
 import { isMatrixTextMessageDTO } from "../fi/hg/matrix/types/message/textMessage/MatrixTextMessageDTO";
 import { createSendEventToRoomWithTnxIdResponseDTO } from "../fi/hg/matrix/types/response/sendEventToRoomWithTnxId/SendEventToRoomWithTnxIdResponseDTO";
-import { isMatrixCreateRoomDTO } from "../fi/hg/matrix/types/request/createRoom/MatrixCreateRoomDTO";
+import { explainMatrixCreateRoomDTO, isMatrixCreateRoomDTO } from "../fi/hg/matrix/types/request/createRoom/MatrixCreateRoomDTO";
 import { createMatrixCreateRoomResponseDTO, MatrixCreateRoomResponseDTO } from "../fi/hg/matrix/types/response/createRoom/MatrixCreateRoomResponseDTO";
 import { isMatrixJoinRoomRequestDTO } from "../fi/hg/matrix/types/request/joinRoom/MatrixJoinRoomRequestDTO";
 import { createMatrixJoinRoomResponseDTO } from "../fi/hg/matrix/types/response/joinRoom/MatrixJoinRoomResponseDTO";
@@ -645,15 +645,17 @@ export class HsBackendController {
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
 
+            LOG.debug(`createRoom: body = `, body);
             if (!isMatrixCreateRoomDTO(body)) {
+                LOG.debug(`Body invalid: ${explainMatrixCreateRoomDTO(body)}`);
                 return ResponseEntity.badRequest<MatrixErrorDTO>().body(
                     createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Body not MatrixCreateRoomDTO`)
                 ).status(400);
             }
 
-            LOG.debug(`accountWhoAmI: accessHeader = `, accessHeader);
+            LOG.debug(`createRoom: accessHeader = `, accessHeader);
             const accessToken = AuthorizationUtils.parseBearerToken(accessHeader);
-            LOG.debug(`accountWhoAmI: accessToken = `, accessToken);
+            LOG.debug(`createRoom: accessToken = `, accessToken);
 
             LOG.debug(`createRoom: requestDto: `, body);
             const responseDto : MatrixCreateRoomResponseDTO = await this._matrixServer.createRoom(accessToken, body);
