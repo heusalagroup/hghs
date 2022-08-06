@@ -30,11 +30,25 @@ system tests.
 
 ### Fetching source code
 
+#### Fetching source code using SSH
+
 ```bash
 git clone git@github.com:heusalagroup/hghs.git hghs
 cd hghs
 git submodule update --init --recursive
 ```
+
+#### Fetching source code using HTTP
+
+Our code leans heavily on git submodules configured over ssh URLs. For http 
+access, you'll need to set up an override to use https instead:
+
+```bash
+git config --global url.ssh://git@github.com:heusalagroup/.insteadOf https://github.com/heusalagroup/
+```
+
+This will translate any use of `git@github.com:heusalagroup/REPO` to 
+`https://github.com/heusalagroup/REPO`.
 
 ### Build docker containers
 
