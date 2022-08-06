@@ -31,7 +31,7 @@ system tests.
 ### Fetching source code
 
 ```bash
-git clone git@github.com:hangovergames/hghs.git hghs
+git clone git@github.com:heusalagroup/hghs.git hghs
 cd hghs
 git submodule update --init --recursive
 ```
