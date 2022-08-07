@@ -32,7 +32,7 @@ system tests.
 
 #### Fetching source code using SSH
 
-```bash
+```shell
 git clone git@github.com:heusalagroup/hghs.git hghs
 cd hghs
 git submodule update --init --recursive
@@ -43,12 +43,18 @@ git submodule update --init --recursive
 Our code leans heavily on git submodules configured over ssh URLs. For http 
 access, you'll need to set up an override to use https instead:
 
-```bash
-git config --global url.ssh://git@github.com:heusalagroup/.insteadOf https://github.com/heusalagroup/
+```shell
+git config --global url.https://github.com/heusalagroup/.insteadOf git@github.com:heusalagroup/
 ```
 
 This will translate any use of `git@github.com:heusalagroup/REPO` to 
 `https://github.com/heusalagroup/REPO`.
+
+This setting can be removed using:
+
+```shell
+git config --unset --global url.https://github.com/heusalagroup/.insteadOf
+```
 
 ### Build docker containers
 
