@@ -1,5 +1,5 @@
 ---
-name: Feature
+name: Event task
 about: New event task
 title: "[TASK] [TBD HTP] Event m.something"
 labels: task
