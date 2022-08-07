@@ -19,7 +19,7 @@ import { parseMatrixRegisterKind } from "../fi/hg/matrix/types/request/register/
 import { createSynapsePreRegisterResponseDTO } from "../fi/hg/matrix/types/synapse/SynapsePreRegisterResponseDTO";
 import { isSynapseRegisterRequestDTO } from "../fi/hg/matrix/types/synapse/SynapseRegisterRequestDTO";
 import { createSynapseRegisterResponseDTO, SynapseRegisterResponseDTO } from "../fi/hg/matrix/types/synapse/SynapseRegisterResponseDTO";
-import { MatrixWhoAmIResponseDTO } from "../fi/hg/matrix/types/response/whoami/MatrixWhoAmIResponseDTO";
+import { createMatrixWhoAmIResponseDTO } from "../fi/hg/matrix/types/response/whoami/MatrixWhoAmIResponseDTO";
 import { isMatrixLoginRequestDTO } from "../fi/hg/matrix/types/request/login/MatrixLoginRequestDTO";
 import { createMatrixLoginResponseDTO, MatrixLoginResponseDTO } from "../fi/hg/matrix/types/response/login/MatrixLoginResponseDTO";
 import { createMatrixDiscoveryInformationDTO } from "../fi/hg/matrix/types/response/login/types/MatrixDiscoveryInformationDTO";
@@ -40,7 +40,7 @@ import { createMatrixInviteToRoomResponseDTO } from "../fi/hg/matrix/types/respo
 import { isMatrixTextMessageDTO } from "../fi/hg/matrix/types/message/textMessage/MatrixTextMessageDTO";
 import { createSendEventToRoomWithTnxIdResponseDTO } from "../fi/hg/matrix/types/response/sendEventToRoomWithTnxId/SendEventToRoomWithTnxIdResponseDTO";
 import { explainMatrixCreateRoomDTO, isMatrixCreateRoomDTO } from "../fi/hg/matrix/types/request/createRoom/MatrixCreateRoomDTO";
-import { createMatrixCreateRoomResponseDTO, MatrixCreateRoomResponseDTO } from "../fi/hg/matrix/types/response/createRoom/MatrixCreateRoomResponseDTO";
+import { MatrixCreateRoomResponseDTO } from "../fi/hg/matrix/types/response/createRoom/MatrixCreateRoomResponseDTO";
 import { isMatrixJoinRoomRequestDTO } from "../fi/hg/matrix/types/request/joinRoom/MatrixJoinRoomRequestDTO";
 import { createMatrixJoinRoomResponseDTO } from "../fi/hg/matrix/types/response/joinRoom/MatrixJoinRoomResponseDTO";
 import { createMatrixSyncResponseDTO, MatrixSyncResponseDTO } from "../fi/hg/matrix/types/response/sync/MatrixSyncResponseDTO";
@@ -52,8 +52,17 @@ import { MatrixType } from "../fi/hg/matrix/types/core/MatrixType";
 import { AuthorizationUtils } from "../fi/hg/core/AuthorizationUtils";
 import { LogLevel } from "../fi/hg/core/types/LogLevel";
 import { MatrixUtils } from "../fi/hg/matrix/MatrixUtils";
+import { UserRepositoryItem } from "../fi/hg/matrix/server/types/repository/user/UserRepositoryItem";
+import { DeviceRepositoryItem } from "../fi/hg/matrix/server/types/repository/device/DeviceRepositoryItem";
 
 const LOG = LogService.createLogger('HsBackendController');
+
+export interface WhoAmIResult {
+    readonly accessToken: string;
+    readonly userId: string;
+    readonly deviceId: string;
+    readonly device: DeviceRepositoryItem;
+}
 
 @RequestMapping("/")
 export class HsBackendController {
@@ -83,10 +92,7 @@ export class HsBackendController {
                 } as unknown as ReadonlyJsonObject
             );
         } catch (err) {
-            LOG.error(`ERROR: `, err);
-            return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
-                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,'Internal Server Error')
-            );
+            return this._handleException('getIndex', err);
         }
     }
 
@@ -107,10 +113,7 @@ export class HsBackendController {
             const response = createSynapsePreRegisterResponseDTO( nonce );
             return ResponseEntity.ok( response as unknown as ReadonlyJsonObject );
         } catch (err) {
-            LOG.error(`ERROR: `, err);
-            return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
-                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
-            );
+            return this._handleException('getSynapseAdminRegister', err);
         }
     }
 
@@ -145,10 +148,7 @@ export class HsBackendController {
             );
             return ResponseEntity.ok( response as unknown as ReadonlyJsonObject );
         } catch (err) {
-            LOG.error(`ERROR: `, err);
-            return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
-                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
-            );
+            return this._handleException('postSynapseAdminRegister', err);
         }
     }
 
@@ -167,19 +167,34 @@ export class HsBackendController {
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
             LOG.debug(`accountWhoAmI: accessHeader = `, accessHeader);
-            const accessToken = AuthorizationUtils.parseBearerToken(accessHeader);
-            LOG.debug(`accountWhoAmI: accessToken = `, accessToken);
-            const dto : MatrixWhoAmIResponseDTO = await this._matrixServer.whoAmI(accessToken);
+
+            const {userId, deviceId, device} = await this._whoAmIFromAccessHeader(accessHeader);
+
+            const user : UserRepositoryItem | undefined = await this._matrixServer.findUserById(userId);
+            LOG.debug(`whoAmI: user = `, user);
+            if (!user) {
+                LOG.warn(`whoAmI: User not found: `, user, userId, deviceId);
+                return ResponseEntity.badRequest<MatrixErrorDTO>().body(
+                    createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN_TOKEN,'Unrecognised access token.')
+                ).status(401);
+            }
+
+            const username = user?.username;
+            LOG.debug(`whoAmI: username = `, username);
+
+            const deviceIdentifier = device?.deviceId ?? device?.id;
+
+            const dto = createMatrixWhoAmIResponseDTO(
+                MatrixUtils.getUserId(username, this._matrixServer.getHostName()),
+                deviceIdentifier ? deviceIdentifier : undefined,
+                false
+            );
+
             LOG.debug(`accountWhoAmI: response = `, dto);
             return ResponseEntity.ok( dto as unknown as ReadonlyJsonObject );
+
         } catch (err) {
-            LOG.error(`accountWhoAmI: ERROR: `, err);
-            if (isMatrixErrorDTO(err)) {
-                return ResponseEntity.badRequest<MatrixErrorDTO>().body(err).status(401);
-            }
-            return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
-                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
-            );
+            return this._handleException('accountWhoAmI', err);
         }
     }
 
@@ -255,10 +270,7 @@ export class HsBackendController {
             return ResponseEntity.ok( responseDto as unknown as ReadonlyJsonObject );
 
         } catch (err) {
-            LOG.error(`ERROR: `, err);
-            return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
-                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
-            );
+            return this._handleException('login', err);
         }
     }
 
@@ -288,10 +300,7 @@ export class HsBackendController {
                 response as unknown as ReadonlyJsonObject
             );
         } catch (err) {
-            LOG.error(`ERROR: `, err);
-            return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
-                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
-            );
+            return this._handleException('getDirectoryRoomByName', err);
         }
     }
 
@@ -326,10 +335,7 @@ export class HsBackendController {
             );
 
         } catch (err) {
-            LOG.error(`getRoomJoinedMembers: ERROR: `, err);
-            return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
-                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
-            );
+            return this._handleException('getRoomJoinedMembers', err);
         }
     }
 
@@ -376,10 +382,7 @@ export class HsBackendController {
             );
 
         } catch (err) {
-            LOG.error(`registerUser: ERROR: `, err);
-            return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
-                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
-            );
+            return this._handleException('registerUser', err);
         }
     }
 
@@ -406,20 +409,13 @@ export class HsBackendController {
         stateKey = ""
     ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
         try {
-
             LOG.debug(`getRoomStateByType: roomId = `, roomId, eventType, stateKey);
-
             const responseDto = createGetRoomStateByTypeResponseDTO('roomName');
-
             return ResponseEntity.ok(
                 responseDto as unknown as ReadonlyJsonObject
             );
-
         } catch (err) {
-            LOG.error(`getRoomStateByType: ERROR: `, err);
-            return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
-                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
-            );
+            return this._handleException('getRoomStateByType', err);
         }
     }
 
@@ -468,10 +464,7 @@ export class HsBackendController {
             );
 
         } catch (err) {
-            LOG.error(`setRoomStateByType: ERROR: `, err);
-            return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
-                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
-            );
+            return this._handleException('setRoomStateByType', err);
         }
     }
 
@@ -498,10 +491,7 @@ export class HsBackendController {
                 {} as unknown as ReadonlyJsonObject
             );
         } catch (err) {
-            LOG.error(`forgetRoom: ERROR: `, err);
-            return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
-                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
-            );
+            return this._handleException('forgetRoom', err);
         }
     }
 
@@ -536,10 +526,7 @@ export class HsBackendController {
                 responseDto as unknown as ReadonlyJsonObject
             );
         } catch (err) {
-            LOG.error(`leaveRoom: ERROR: `, err);
-            return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
-                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
-            );
+            return this._handleException('leaveRoom', err);
         }
     }
 
@@ -575,10 +562,7 @@ export class HsBackendController {
                 responseDto as unknown as ReadonlyJsonObject
             );
         } catch (err) {
-            LOG.error(`inviteToRoom: ERROR: `, err);
-            return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
-                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
-            );
+            return this._handleException('inviteToRoom', err);
         }
     }
 
@@ -620,10 +604,7 @@ export class HsBackendController {
                 responseDto as unknown as ReadonlyJsonObject
             );
         } catch (err) {
-            LOG.error(`sendEventToRoomWithTnxId: ERROR: `, err);
-            return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
-                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
-            );
+            return this._handleException('sendEventToRoomWithTnxId', err);
         }
     }
 
@@ -654,21 +635,17 @@ export class HsBackendController {
             }
 
             LOG.debug(`createRoom: accessHeader = `, accessHeader);
-            const accessToken = AuthorizationUtils.parseBearerToken(accessHeader);
-            LOG.debug(`createRoom: accessToken = `, accessToken);
+            const { userId, deviceId } = await this._whoAmIFromAccessHeader(accessHeader);
 
             LOG.debug(`createRoom: requestDto: `, body);
-            const responseDto : MatrixCreateRoomResponseDTO = await this._matrixServer.createRoom(accessToken, body);
+            const responseDto : MatrixCreateRoomResponseDTO = await this._matrixServer.createRoom(userId, deviceId, body);
             LOG.debug(`createRoom: responseDto: `, body);
             return ResponseEntity.ok(
                 responseDto as unknown as ReadonlyJsonObject
             );
 
         } catch (err) {
-            LOG.error(`createRoom: ERROR: `, err);
-            return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
-                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
-            );
+            return this._handleException('createRoom', err);
         }
     }
 
@@ -704,10 +681,7 @@ export class HsBackendController {
                 responseDto as unknown as ReadonlyJsonObject
             );
         } catch (err) {
-            LOG.error(`joinToRoom: ERROR: `, err);
-            return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
-                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
-            );
+            return this._handleException('joinToRoom', err);
         }
     }
 
@@ -748,11 +722,79 @@ export class HsBackendController {
                 responseDto as unknown as ReadonlyJsonObject
             );
         } catch (err) {
-            LOG.error(`sync: ERROR: `, err);
-            return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
-                createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
-            );
+            return this._handleException('sync', err);
         }
+    }
+
+    /**
+     * Verifies who is the requester using access token
+     *
+     * @param accessToken
+     * @private
+     */
+    private static async _whoAmIFromAccessToken (accessToken: string) : Promise<WhoAmIResult> {
+
+        LOG.debug(`whoAmI: accessToken = `, accessToken);
+        if ( !accessToken ) {
+            LOG.warn(`Warning! No authentication token provided.`);
+            throw createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN_TOKEN, 'Unrecognised access token.');
+        }
+
+        const deviceId: string | undefined = await this._matrixServer.verifyAccessToken(accessToken);
+        if (!deviceId) {
+            throw createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN_TOKEN,'Unrecognised access token.') ;
+        }
+
+        const device = await this._matrixServer.findDeviceById(deviceId);
+        if (!device) {
+            LOG.warn(`whoAmI: Device not found: `, deviceId, accessToken);
+            throw createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN_TOKEN,'Unrecognised access token.');
+        }
+
+        const userId = device?.userId;
+        LOG.debug(`whoAmI: userId = `, userId);
+        if (!userId) {
+            LOG.warn(`whoAmI: User ID invalid: `, userId, deviceId, accessToken);
+            throw createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN_TOKEN,'Unrecognised access token.');
+        }
+
+        return {
+            accessToken,
+            deviceId,
+            device,
+            userId
+        };
+
+    }
+
+    /**
+     * Verifies who is the requester using Bearer auth access header value
+     *
+     * @param accessHeader
+     * @private
+     */
+    private static async _whoAmIFromAccessHeader (accessHeader: string) : Promise<WhoAmIResult> {
+        LOG.debug(`_whoAmIFromAccessHeader: accessHeader = `, accessHeader);
+        const accessToken = AuthorizationUtils.parseBearerToken(accessHeader);
+        LOG.debug(`_whoAmIFromAccessHeader: accessToken = `, accessToken);
+        return this._whoAmIFromAccessToken(accessToken);
+    }
+
+    /**
+     * Handle exceptions
+     *
+     * @param callName
+     * @param err
+     * @private
+     */
+    private static _handleException (callName: string, err: any) : ResponseEntity<MatrixErrorDTO> {
+        LOG.error(`${callName}: ERROR: `, err);
+        if (isMatrixErrorDTO(err)) {
+            return ResponseEntity.badRequest<MatrixErrorDTO>().body(err).status(401);
+        }
+        return ResponseEntity.internalServerError<MatrixErrorDTO>().body(
+            createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN, 'Internal Server Error')
+        );
     }
 
 }
