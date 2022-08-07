@@ -1,6 +1,6 @@
 # @heusalagroup/hghs
 
-*HG HomeServer* will be a zero dep [Matrix.org](https://matrix.org) HomeServer 
+*HG HomeServer* ***will be*** a zero dep [Matrix.org](https://matrix.org) HomeServer 
 written in pure TypeScript.
 
 It's intended for special use cases when Matrix protocol is used as a backbone 
