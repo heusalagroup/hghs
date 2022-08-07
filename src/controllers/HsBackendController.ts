@@ -1,15 +1,6 @@
 // Copyright (c) 2022. Heusala Group <info@heusalagroup.fi>. All rights reserved.
 
-import {
-    GetMapping,
-    PathVariable,
-    PostMapping,
-    PutMapping,
-    RequestBody,
-    RequestHeader,
-    RequestMapping,
-    RequestParam
-} from "../fi/hg/core/Request";
+import { GetMapping, PathVariable, PostMapping, PutMapping, RequestBody, RequestHeader, RequestMapping, RequestParam } from "../fi/hg/core/Request";
 import { ReadonlyJsonObject } from "../fi/hg/core/Json";
 import { ResponseEntity } from "../fi/hg/core/request/ResponseEntity";
 import { LogService } from "../fi/hg/core/LogService";
@@ -58,6 +49,9 @@ import { MatrixRoomId } from "../fi/hg/matrix/types/core/MatrixRoomId";
 import { parseMatrixRoomVersion } from "../fi/hg/matrix/types/MatrixRoomVersion";
 import { MatrixVisibility, parseMatrixVisibility } from "../fi/hg/matrix/types/request/createRoom/types/MatrixVisibility";
 import { MatrixRoomCreateEventDTO } from "../fi/hg/matrix/types/event/roomCreate/MatrixRoomCreateEventDTO";
+import { MatrixStateEvent } from "../fi/hg/matrix/types/core/MatrixStateEvent";
+import { MatrixCreateRoomPreset } from "../fi/hg/matrix/types/request/createRoom/types/MatrixCreateRoomPreset";
+import { RoomMembershipState } from "../fi/hg/matrix/types/event/roomMember/RoomMembershipState";
 
 const LOG = LogService.createLogger('HsBackendController');
 
@@ -615,7 +609,7 @@ export class HsBackendController {
     /**
      *
      * @param accessHeader
-     * @param body
+     * @param bodyJson
      * @see https://github.com/heusalagroup/hghs/issues/13
      */
     @PostMapping("/_matrix/client/r0/createRoom")
@@ -626,17 +620,18 @@ export class HsBackendController {
         })
             accessHeader: string,
         @RequestBody
-            body: MatrixCreateRoomDTO
+            bodyJson: ReadonlyJsonObject
     ): Promise<ResponseEntity<MatrixCreateRoomResponseDTO | MatrixErrorDTO>> {
         try {
 
-            LOG.debug(`createRoom: body = `, body);
-            if (!isMatrixCreateRoomDTO(body)) {
-                LOG.debug(`Body invalid: ${explainMatrixCreateRoomDTO(body)}`);
+            LOG.debug(`createRoom: bodyJson = `, bodyJson);
+            if (!isMatrixCreateRoomDTO(bodyJson)) {
+                LOG.debug(`Body invalid: ${explainMatrixCreateRoomDTO(bodyJson)}`);
                 return ResponseEntity.badRequest<MatrixErrorDTO>().body(
                     createMatrixErrorDTO(MatrixErrorCode.M_UNKNOWN,`Body not MatrixCreateRoomDTO`)
                 ).status(400);
             }
+            const body : MatrixCreateRoomDTO = bodyJson;
 
             LOG.debug(`createRoom: accessHeader = `, accessHeader);
             const { userId, deviceId } = await this._whoAmIFromAccessHeader(accessHeader);
@@ -646,9 +641,16 @@ export class HsBackendController {
             const visibility : MatrixVisibility = parseMatrixVisibility(body?.visibility) ?? MatrixVisibility.PRIVATE;
             const roomVersion = parseMatrixRoomVersion(body?.room_version) ?? this._matrixServer.getDefaultRoomVersion();
 
+            const preset : MatrixCreateRoomPreset = body?.preset ?? MatrixUtils.getRoomPresetFromVisibility(visibility);
+
             LOG.debug(`createRoom: whoAmI: `, userId, deviceId);
             const {roomId} = await this._matrixServer.createRoom(userId, deviceId, roomVersion, visibility);
 
+            const presetStateEvents = MatrixUtils.getRoomStateEventsFromPreset(roomId, preset);
+
+            const initialStateEvents : readonly MatrixStateEvent[] = body?.initial_state ?? [];
+
+            // 1. Add m.room.create event
             await this._matrixServer.createRoomCreateEvent(
                 userId,
                 roomId,
@@ -656,6 +658,39 @@ export class HsBackendController {
                 userId,
                 creationContent
             );
+
+            // 2. Create m.room.member event
+            await this._matrixServer.createRoomMemberEvent(
+                userId,
+                roomId,
+                RoomMembershipState.JOIN
+            );
+
+            // 3. TODO: Create `m.room.power_levels` event
+            // 4. TODO: Create `m.room.canonical_alias` event if `body.room_alias_name` is defined
+            // 5. TODO: Add events from `presetStateEvents`
+
+            // 6. Add events from `initialStateEvents`
+            let i = 0;
+            for (; i<initialStateEvents.length; i+=1) {
+                const item = initialStateEvents[i];
+                const itemType = item.type;
+                const itemStateKey = item?.state_key;
+                const itemContent = item.content;
+                await this._matrixServer.createRoomStateEvent(
+                    userId,
+                    roomId,
+                    itemContent,
+                    itemType,
+                    itemStateKey
+                );
+            }
+
+            // 7a. TODO: Add `m.room.name` event
+            // 7b. TODO: Add `m.room.topic` event
+
+            // 8a. TODO: Add `m.room.member` event(s) from `body.invite`
+            // 8b. TODO: Add `m.room.member` event(s) from `body.third_party_invite`
 
             const matrixRoomId : MatrixRoomId = MatrixUtils.getRoomId(roomId, this._matrixServer.getHostName());
             LOG.debug(`createRoom: matrixRoomId: `, matrixRoomId);
