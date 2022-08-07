@@ -39,8 +39,8 @@ import { isMatrixInviteToRoomRequestDTO } from "../fi/hg/matrix/types/request/in
 import { createMatrixInviteToRoomResponseDTO } from "../fi/hg/matrix/types/response/inviteToRoom/MatrixInviteToRoomResponseDTO";
 import { isMatrixTextMessageDTO } from "../fi/hg/matrix/types/message/textMessage/MatrixTextMessageDTO";
 import { createSendEventToRoomWithTnxIdResponseDTO } from "../fi/hg/matrix/types/response/sendEventToRoomWithTnxId/SendEventToRoomWithTnxIdResponseDTO";
-import { explainMatrixCreateRoomDTO, isMatrixCreateRoomDTO } from "../fi/hg/matrix/types/request/createRoom/MatrixCreateRoomDTO";
-import { MatrixCreateRoomResponseDTO } from "../fi/hg/matrix/types/response/createRoom/MatrixCreateRoomResponseDTO";
+import { explainMatrixCreateRoomDTO, isMatrixCreateRoomDTO, MatrixCreateRoomDTO } from "../fi/hg/matrix/types/request/createRoom/MatrixCreateRoomDTO";
+import { createMatrixCreateRoomResponseDTO, MatrixCreateRoomResponseDTO } from "../fi/hg/matrix/types/response/createRoom/MatrixCreateRoomResponseDTO";
 import { isMatrixJoinRoomRequestDTO } from "../fi/hg/matrix/types/request/joinRoom/MatrixJoinRoomRequestDTO";
 import { createMatrixJoinRoomResponseDTO } from "../fi/hg/matrix/types/response/joinRoom/MatrixJoinRoomResponseDTO";
 import { createMatrixSyncResponseDTO, MatrixSyncResponseDTO } from "../fi/hg/matrix/types/response/sync/MatrixSyncResponseDTO";
@@ -54,6 +54,10 @@ import { LogLevel } from "../fi/hg/core/types/LogLevel";
 import { MatrixUtils } from "../fi/hg/matrix/MatrixUtils";
 import { UserRepositoryItem } from "../fi/hg/matrix/server/types/repository/user/UserRepositoryItem";
 import { DeviceRepositoryItem } from "../fi/hg/matrix/server/types/repository/device/DeviceRepositoryItem";
+import { MatrixRoomId } from "../fi/hg/matrix/types/core/MatrixRoomId";
+import { parseMatrixRoomVersion } from "../fi/hg/matrix/types/MatrixRoomVersion";
+import { MatrixVisibility, parseMatrixVisibility } from "../fi/hg/matrix/types/request/createRoom/types/MatrixVisibility";
+import { MatrixRoomCreateEventDTO } from "../fi/hg/matrix/types/event/roomCreate/MatrixRoomCreateEventDTO";
 
 const LOG = LogService.createLogger('HsBackendController');
 
@@ -622,8 +626,8 @@ export class HsBackendController {
         })
             accessHeader: string,
         @RequestBody
-            body: ReadonlyJsonObject
-    ): Promise<ResponseEntity<ReadonlyJsonObject | MatrixErrorDTO>> {
+            body: MatrixCreateRoomDTO
+    ): Promise<ResponseEntity<MatrixCreateRoomResponseDTO | MatrixErrorDTO>> {
         try {
 
             LOG.debug(`createRoom: body = `, body);
@@ -637,12 +641,32 @@ export class HsBackendController {
             LOG.debug(`createRoom: accessHeader = `, accessHeader);
             const { userId, deviceId } = await this._whoAmIFromAccessHeader(accessHeader);
 
-            LOG.debug(`createRoom: requestDto: `, body);
-            const responseDto : MatrixCreateRoomResponseDTO = await this._matrixServer.createRoom(userId, deviceId, body);
-            LOG.debug(`createRoom: responseDto: `, body);
-            return ResponseEntity.ok(
-                responseDto as unknown as ReadonlyJsonObject
+            const creationContent : Partial<MatrixRoomCreateEventDTO> | undefined = body?.creation_content;
+
+            const visibility : MatrixVisibility = parseMatrixVisibility(body?.visibility) ?? MatrixVisibility.PRIVATE;
+            const roomVersion = parseMatrixRoomVersion(body?.room_version) ?? this._matrixServer.getDefaultRoomVersion();
+
+            LOG.debug(`createRoom: whoAmI: `, userId, deviceId);
+            const {roomId} = await this._matrixServer.createRoom(userId, deviceId, roomVersion, visibility);
+
+            await this._matrixServer.createRoomCreateEvent(
+                userId,
+                roomId,
+                roomVersion,
+                userId,
+                creationContent
             );
+
+            const matrixRoomId : MatrixRoomId = MatrixUtils.getRoomId(roomId, this._matrixServer.getHostName());
+            LOG.debug(`createRoom: matrixRoomId: `, matrixRoomId);
+
+            const responseDto : MatrixCreateRoomResponseDTO =  createMatrixCreateRoomResponseDTO(
+                matrixRoomId,
+                undefined
+            );
+
+            LOG.debug(`createRoom: responseDto: `, responseDto);
+            return ResponseEntity.ok<MatrixCreateRoomResponseDTO>(responseDto);
 
         } catch (err) {
             return this._handleException('createRoom', err);
