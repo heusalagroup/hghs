@@ -1,4 +1,4 @@
-ARG NODE_IMAGE=node:14
+ARG NODE_IMAGE=node:20
 
 FROM $NODE_IMAGE as node-image
 
@@ -18,13 +18,16 @@ ENV BACKEND_PUBLIC_URL='http://localhost:8008'
 ENV BACKEND_INITIAL_USERS=''
 ENV BACKEND_JWT_SECRET=''
 
+EXPOSE 8008
+EXPOSE 8448
+
 WORKDIR /app
 COPY ./package*.json ./
-RUN npm ci --silent --also=dev
+RUN [ "npm", "ci", "--silent", "--also=dev" ]
 COPY tsconfig.json ./tsconfig.json
 COPY rollup.config.js ./rollup.config.js
 COPY babel.config.json ./babel.config.json
 COPY src ./src
-RUN npm run build
+RUN [ "npm", "run", "build" ]
 
-CMD npm -s run start-prod
+CMD [ "npm", "-s", "run", "start-prod" ]

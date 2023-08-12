@@ -3,9 +3,10 @@ version: '3.1'
 services:
 
   hghs-backend:
-    container_name: hghs-backend
-    hostname: hghs-backend
-    restart: always
+    image: "hghs-backend"
+    container_name: "hghs-backend"
+    hostname: "hghs-backend"
+    restart: "unless-stopped"
     build: .
     environment:
       PORT: "8008"
@@ -17,3 +18,4 @@ services:
       BACKEND_JWT_SECRET: "$BACKEND_JWT_SECRET"
     ports:
     - "8008:8008"
+    - "8443:8443"

@@ -1,16 +1,16 @@
-// Copyright (c) 2021. Heusala Group Oy <info@heusalagroup.fi>. All rights reserved.
+// Copyright (c) 2021-2023. Heusala Group Oy <info@heusalagroup.fi>. All rights reserved.
 
-import pkg from './package.json';
-import resolve from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
-import typescript from '@rollup/plugin-typescript';
-import json from '@rollup/plugin-json';
-import { babel, getBabelOutputPlugin } from '@rollup/plugin-babel';
-import { uglify } from "rollup-plugin-uglify";
-import PATH from 'path';
-import replace from '@rollup/plugin-replace';
-// import externalGlobals from "rollup-plugin-external-globals";
-// import inject from '@rollup/plugin-inject';
+const pkg = require('./package.json');
+const resolve = require('@rollup/plugin-node-resolve');
+const commonjs = require('@rollup/plugin-commonjs');
+const typescript = require('@rollup/plugin-typescript');
+const json = require('@rollup/plugin-json');
+const { babel, getBabelOutputPlugin } = require('@rollup/plugin-babel');
+const { uglify } = require("rollup-plugin-uglify");
+const PATH = require('path');
+const replace = require('@rollup/plugin-replace');
+// const externalGlobals = require("rollup-plugin-external-globals");
+// const inject = require('@rollup/plugin-inject');
 
 const BUILD_VERSION               = process?.env?.BUILD_VERSION                            ?? pkg?.version ?? '';
 const BUILD_NODE_ENV              = process?.env?.BUILD_NODE_ENV ?? process?.env?.NODE_ENV ?? 'production';
@@ -28,7 +28,7 @@ console.log(`Building with options:
   BUILD_LOG_LEVEL             = '${BUILD_LOG_LEVEL}'
   BUILD_WITH_FULL_USAGE       = '${BUILD_WITH_FULL_USAGE}'`);
 
-export default {
+module.exports = {
     input: 'src/hghs.ts',
     external: [
         'node:buffer',

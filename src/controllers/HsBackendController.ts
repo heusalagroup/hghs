@@ -1,9 +1,16 @@
-// Copyright (c) 2022. Heusala Group <info@heusalagroup.fi>. All rights reserved.
+// Copyright (c) 2022-2023. Heusala Group <info@heusalagroup.fi>. All rights reserved.
 
-import { GetMapping, PathVariable, PostMapping, PutMapping, RequestBody, RequestHeader, RequestMapping, RequestParam } from "../fi/hg/core/Request";
 import { ReadonlyJsonObject } from "../fi/hg/core/Json";
-import { ResponseEntity } from "../fi/hg/core/request/ResponseEntity";
 import { LogService } from "../fi/hg/core/LogService";
+import { GetMapping } from "../fi/hg/core/request/GetMapping";
+import { PathVariable } from "../fi/hg/core/request/PathVariable";
+import { PostMapping } from "../fi/hg/core/request/PostMapping";
+import { PutMapping } from "../fi/hg/core/request/PutMapping";
+import { RequestBody } from "../fi/hg/core/request/RequestBody";
+import { RequestHeader } from "../fi/hg/core/request/RequestHeader";
+import { RequestMapping } from "../fi/hg/core/request/RequestMapping";
+import { RequestParam } from "../fi/hg/core/request/RequestParam";
+import { ResponseEntity } from "../fi/hg/core/request/types/ResponseEntity";
 import { MATRIX_AUTHORIZATION_HEADER_NAME } from "../fi/hg/matrix/constants/matrix-routes";
 import { RequestParamValueType } from "../fi/hg/core/request/types/RequestParamValueType";
 import { parseMatrixRegisterKind } from "../fi/hg/matrix/types/request/register/types/MatrixRegisterKind";
@@ -62,6 +69,9 @@ export interface WhoAmIResult {
     readonly device: DeviceRepositoryItem;
 }
 
+/**
+ * Client facing REST backend controller
+ */
 @RequestMapping("/")
 export class HsBackendController {
 

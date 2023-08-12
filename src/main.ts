@@ -1,5 +1,11 @@
-// Copyright (c) 2022. Heusala Group <info@heusalagroup.fi>. All rights reserved.
+// Copyright (c) 2022-2023. Heusala Group <info@heusalagroup.fi>. All rights reserved.
 
+import { BackendTranslationServiceImpl } from "./fi/hg/backend/BackendTranslationServiceImpl";
+import { EmailServiceImpl } from "./fi/hg/backend/EmailServiceImpl";
+import { JwtEncodeServiceImpl } from "./fi/hg/backend/JwtEncodeServiceImpl";
+import { EmailService } from "./fi/hg/core/email/EmailService";
+import { JwtEncodeService } from "./fi/hg/core/jwt/JwtEncodeService";
+import { JwtEngine } from "./fi/hg/core/jwt/JwtEngine";
 import { ProcessUtils } from "./fi/hg/core/ProcessUtils";
 
 // Must be first import to define environment variables before anything else
@@ -10,70 +16,42 @@ import {
     BACKEND_LOG_LEVEL,
     BACKEND_URL,
     BACKEND_HOSTNAME,
-    BACKEND_IO_SERVER,
     BACKEND_JWT_SECRET,
     BACKEND_JWT_ALG,
     BACKEND_DEFAULT_LANGUAGE,
     BACKEND_EMAIL_FROM,
     BACKEND_EMAIL_CONFIG,
     BACKEND_ACCESS_TOKEN_EXPIRATION_TIME,
-    BACKEND_INITIAL_USERS, BACKEND_PUBLIC_URL
+    BACKEND_INITIAL_USERS, BACKEND_PUBLIC_URL, FEDERATION_URL
 } from "./constants/runtime";
 import {
     BUILD_USAGE_URL,
     BUILD_WITH_FULL_USAGE
 } from "./constants/build";
-import {
-    IO_DEVICE_ROOM_TYPE,
-    IO_EVENT_ROOM_TYPE,
-    IO_ROOM_ROOM_TYPE,
-    IO_USER_ROOM_TYPE
-} from "./constants/io";
 
 import { LogService } from "./fi/hg/core/LogService";
+import { RequestClientImpl } from "./fi/hg/core/RequestClientImpl";
+import { RequestServer } from "./fi/hg/core/RequestServer";
+import { RequestRouterImpl } from "./fi/hg/core/requestServer/RequestRouterImpl";
 import { LogLevel } from "./fi/hg/core/types/LogLevel";
 
 LogService.setLogLevel(BACKEND_LOG_LEVEL);
 
 import { TRANSLATIONS } from "./fi/hg/core/translations";
 
-import { Request } from "./fi/hg/core/Request";
-Request.setLogLevel(LogLevel.INFO);
-
-import { Headers } from "./fi/hg/core/request/Headers";
+import { Headers } from "./fi/hg/core/request/types/Headers";
 Headers.setLogLevel(LogLevel.INFO);
 
 import { CommandExitStatus } from "./fi/hg/core/cmd/types/CommandExitStatus";
-import { RequestClient } from "./fi/hg/core/RequestClient";
 import { CommandArgumentUtils } from "./fi/hg/core/cmd/utils/CommandArgumentUtils";
 import { ParsedCommandArgumentStatus } from "./fi/hg/core/cmd/types/ParsedCommandArgumentStatus";
-import { RequestServer } from "./fi/hg/core/RequestServer";
-import { RequestRouter } from "./fi/hg/core/requestServer/RequestRouter";
-import { RepositoryType } from "./fi/hg/core/simpleRepository/types/RepositoryType";
-import { parseInteger, startsWith } from "./fi/hg/core/modules/lodash";
-import { MemorySharedClientService } from "./fi/hg/core/simpleRepository/MemorySharedClientService";
-import { StoredRepositoryItem, StoredRepositoryItemTestCallback } from "./fi/hg/core/simpleRepository/types/StoredRepositoryItem";
-import { MemoryRepositoryInitializer } from "./fi/hg/core/simpleRepository/MemoryRepositoryInitializer";
 import { Language, parseLanguage } from "./fi/hg/core/types/Language";
 import { StaticRoutes } from "./fi/hg/core/requestServer/types/StaticRoutes";
-
-import { BackendTranslationService } from "./fi/hg/backend/BackendTranslationService";
-import { JwtService } from "./fi/hg/backend/JwtService";
-import { EmailService } from "./fi/hg/backend/EmailService";
-
+import { parseInteger } from "./fi/hg/core/types/Number";
 import { MatrixServerService } from "./fi/hg/matrix/server/MatrixServerService";
-import { MatrixSharedClientService } from "./fi/hg/matrix/MatrixSharedClientService";
-import { isStoredDeviceRepositoryItem, StoredDeviceRepositoryItem } from "./fi/hg/matrix/server/types/repository/device/StoredDeviceRepositoryItem";
-import { DeviceRepositoryService } from "./fi/hg/matrix/server/types/repository/device/DeviceRepositoryService";
-import { MatrixRepositoryInitializer } from "./fi/hg/matrix/MatrixRepositoryInitializer";
-import { isStoredUserRepositoryItem, StoredUserRepositoryItem } from "./fi/hg/matrix/server/types/repository/user/StoredUserRepositoryItem";
-import { UserRepositoryService } from "./fi/hg/matrix/server/types/repository/user/UserRepositoryService";
-import { RoomRepositoryService } from "./fi/hg/matrix/server/types/repository/room/RoomRepositoryService";
-import { isStoredRoomRepositoryItem, StoredRoomRepositoryItem } from "./fi/hg/matrix/server/types/repository/room/StoredRoomRepositoryItem";
-import { isStoredEventRepositoryItem, StoredEventRepositoryItem } from "./fi/hg/matrix/server/types/repository/event/StoredEventRepositoryItem";
-import { EventRepositoryService } from "./fi/hg/matrix/server/types/repository/event/EventRepositoryService";
-
 import { HsBackendController } from "./controllers/HsBackendController";
+import { ServerServiceImpl } from "./fi/hg/node/requestServer/ServerServiceImpl";
+import { RequestServerImpl } from "./fi/hg/node/RequestServerImpl";
 
 const LOG = LogService.createLogger('main');
 
@@ -83,9 +61,9 @@ export async function main (
 
     try {
 
-        RequestRouter.setLogLevel(LogLevel.INFO);
-        RequestClient.setLogLevel(LogLevel.INFO);
-        RequestServer.setLogLevel(LogLevel.INFO);
+        RequestRouterImpl.setLogLevel(LogLevel.INFO);
+        RequestClientImpl.setLogLevel(LogLevel.INFO);
+        // RequestServer.setLogLevel(LogLevel.INFO);
         StaticRoutes.setLogLevel(LogLevel.INFO);
         HsBackendController.setLogLevel(LogLevel.DEBUG);
         MatrixServerService.setLogLevel(LogLevel.DEBUG);
@@ -104,85 +82,25 @@ export async function main (
             return exitStatus;
         }
 
-        const jwtService = new JwtService();
-        const jwtEngine = jwtService.createJwtEngine(BACKEND_JWT_SECRET, BACKEND_JWT_ALG);
+        const jwtService : JwtEncodeService = JwtEncodeServiceImpl.create();
+        const jwtEngine : JwtEngine = jwtService.createJwtEngine(BACKEND_JWT_SECRET, BACKEND_JWT_ALG);
 
-        const emailService = new EmailService(BACKEND_EMAIL_FROM);
+        const emailService : EmailService = EmailServiceImpl.create(BACKEND_EMAIL_FROM);
 
         const defaultLanguage : Language = parseLanguage(BACKEND_DEFAULT_LANGUAGE) ?? Language.ENGLISH;
-
-        const repositoryType : RepositoryType = startsWith(BACKEND_IO_SERVER, 'memory:') ? RepositoryType.MEMORY : RepositoryType.MATRIX;
-
-        const matrixSharedClientService = new MatrixSharedClientService();
-        const memorySharedClientService = new MemorySharedClientService();
-
-        // Device repository
-        const deviceRepositoryService = await constructRepository<StoredDeviceRepositoryItem>(
-            repositoryType,
-            isStoredDeviceRepositoryItem,
-            IO_DEVICE_ROOM_TYPE,
-            matrixSharedClientService,
-            memorySharedClientService,
-            DeviceRepositoryService
-        );
-
-        // User repository
-        const userRepositoryService = await constructRepository<StoredUserRepositoryItem>(
-            repositoryType,
-            isStoredUserRepositoryItem,
-            IO_USER_ROOM_TYPE,
-            matrixSharedClientService,
-            memorySharedClientService,
-            UserRepositoryService
-        );
-
-        // Room repository
-        const roomRepositoryService = await constructRepository<StoredRoomRepositoryItem>(
-            repositoryType,
-            isStoredRoomRepositoryItem,
-            IO_ROOM_ROOM_TYPE,
-            matrixSharedClientService,
-            memorySharedClientService,
-            RoomRepositoryService
-        );
-
-        // Event repository
-        const eventRepositoryService = await constructRepository<StoredEventRepositoryItem>(
-            repositoryType,
-            isStoredEventRepositoryItem,
-            IO_EVENT_ROOM_TYPE,
-            matrixSharedClientService,
-            memorySharedClientService,
-            EventRepositoryService
-        );
 
         const matrixServer : MatrixServerService = new MatrixServerService(
             BACKEND_PUBLIC_URL,
             BACKEND_HOSTNAME,
-            deviceRepositoryService,
-            userRepositoryService,
-            roomRepositoryService,
-            eventRepositoryService,
             jwtEngine,
             parseInteger(BACKEND_ACCESS_TOKEN_EXPIRATION_TIME)
         );
 
         // Start initializing
 
-        await BackendTranslationService.initialize(defaultLanguage, TRANSLATIONS);
+        await BackendTranslationServiceImpl.initialize(defaultLanguage, TRANSLATIONS);
 
         emailService.initialize(BACKEND_EMAIL_CONFIG);
-
-        // Initialize repositories
-        if (repositoryType === RepositoryType.MATRIX) {
-            await matrixSharedClientService.initialize(BACKEND_IO_SERVER);
-        } else if (repositoryType === RepositoryType.MEMORY) {
-            await memorySharedClientService.initialize(BACKEND_IO_SERVER);
-        }
-        await deviceRepositoryService.initialize();
-        await userRepositoryService.initialize();
-        await roomRepositoryService.initialize();
-        await eventRepositoryService.initialize();
 
         await matrixServer.initialize();
 
@@ -209,17 +127,43 @@ export async function main (
 
         HsBackendController.setMatrixServer(matrixServer);
 
-        const server = new RequestServer(BACKEND_URL);
+        const server: RequestServer = RequestServerImpl.create(
+            ServerServiceImpl.create(BACKEND_URL),
+            RequestRouterImpl.create(),
+        );
+
+        const fedServer: RequestServer = RequestServerImpl.create(
+            ServerServiceImpl.create(FEDERATION_URL),
+            RequestRouterImpl.create(),
+        );
+
         server.attachController(HsBackendController);
+        fedServer.attachController(HsBackendController);
+
         server.start();
+        fedServer.start();
 
         let serverListener : any = undefined;
-
         const stopPromise = new Promise<void>((resolve, reject) => {
             try {
-                serverListener = server.on(RequestServer.Event.STOPPED, () => {
-                    LOG.debug('Stopping server from RequestServer stop event');
+                serverListener = server.on(RequestServerImpl.Event.STOPPED, () => {
+                    LOG.debug('Stopping backend server from RequestServer stop event');
                     serverListener = undefined;
+                    fedServer.stop();
+                    resolve();
+                });
+            } catch(err) {
+                reject(err);
+            }
+        });
+
+        let fedServerListener : any = undefined;
+        const fedStopPromise= new Promise<void>((resolve, reject) => {
+            try {
+                fedServerListener = fedServer.on(RequestServerImpl.Event.STOPPED, () => {
+                    LOG.debug('Stopping federation server from RequestServer stop event');
+                    fedServerListener = undefined;
+                    server.stop();
                     resolve();
                 });
             } catch(err) {
@@ -230,15 +174,21 @@ export async function main (
         ProcessUtils.setupDestroyHandler( () => {
             LOG.debug('Stopping server from process utils event');
             server.stop();
+            fedServer.stop();
             if (serverListener) {
                 serverListener();
                 serverListener = undefined;
+            }
+            if (fedServerListener) {
+                fedServerListener();
+                fedServerListener = undefined;
             }
         }, (err : any) => {
             LOG.error('Error while shutting down the service: ', err);
         });
 
         await stopPromise;
+        await fedStopPromise;
 
         return CommandExitStatus.OK;
 
@@ -263,7 +213,7 @@ export function getMainUsage (
 
         return `USAGE: ${/* @__PURE__ */scriptName} [OPT(s)] ARG(1) [...ARG(N)]
 
-  HG Oy backend.
+  HG HomeServer.
   
 ...and OPT is one of:
 
@@ -287,26 +237,4 @@ export function getMainUsage (
 See ${/* @__PURE__ */BUILD_USAGE_URL}
 `;
     }
-}
-
-async function constructRepository<T extends StoredRepositoryItem> (
-    repositoryType      : RepositoryType,
-    isT                 : StoredRepositoryItemTestCallback,
-    matrixRoomType      : string,
-    matrixClientService : MatrixSharedClientService,
-    memoryClientService : MemorySharedClientService,
-    ItemRepositoryService : any
-) : Promise<any> {
-
-    if (repositoryType === RepositoryType.MATRIX) {
-        const matrixRepositoryInitializer = new MatrixRepositoryInitializer<T>( matrixRoomType, isT );
-        return new ItemRepositoryService(matrixClientService, matrixRepositoryInitializer);
-    }
-
-    if (repositoryType === RepositoryType.MEMORY) {
-        const memoryRepositoryInitializer = new MemoryRepositoryInitializer<T>( isT );
-        return new ItemRepositoryService(memoryClientService, memoryRepositoryInitializer);
-    }
-
-    throw new TypeError(`Repository type not supported: ${repositoryType}`);
 }

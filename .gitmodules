@@ -10,3 +10,7 @@
 	path = src/fi/hg/backend
 	url = git@github.com:heusalagroup/fi.hg.backend.git
 	branch = main
+[submodule "src/fi/hg/node"]
+	path = src/fi/hg/node
+	url = git@github.com:heusalagroup/fi.hg.node.git
+	branch = main

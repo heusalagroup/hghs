@@ -5,8 +5,11 @@
 
 import {
     parseBoolean as _parseBoolean,
+} from "../fi/hg/core/types/Boolean";
+
+import {
     parseNonEmptyString as _parseNonEmptyString
-} from "../fi/hg/core/modules/lodash";
+} from "../fi/hg/core/types/String";
 
 function parseBoolean (value : any) : boolean | undefined {
     if (value.startsWith('%'+'{') && value.endsWith('}')) return undefined;
@@ -31,17 +34,17 @@ export const BUILD_VERSION : string  = /* @__PURE__ */parseNonEmptyString('%{BUI
 /**
  * @__PURE__
  */
-export const BUILD_BACKEND_URL : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_BACKEND_URL}') ?? `http://0.0.0.0:3000`;
+export const BUILD_BACKEND_URL : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_BACKEND_URL}') ?? `http://0.0.0.0:8008`;
+
+/**
+ * @__PURE__
+ */
+export const BUILD_FEDERATION_URL : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_FEDERATION_URL}') ?? `http://0.0.0.0:8443`;
 
 /**
  * @__PURE__
  */
 export const BUILD_BACKEND_HOSTNAME : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_BACKEND_HOSTNAME}') ?? 'localhost';
-
-/**
- * @__PURE__
- */
-export const BUILD_BACKEND_IO_SERVER : string  = /* @__PURE__ */parseNonEmptyString('%{BUILD_BACKEND_IO_SERVER}') ?? 'memory:';
 
 /**
  * @__PURE__
